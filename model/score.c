@@ -2,7 +2,7 @@
 #include "score.h"
 
 /* TODO: document caller-visible behaviour before implementing. */
-void add_score(Score *score, int points)
+void addScore(Score *score, int points)
 {
     /* TODO: implement. These casts only silence unused-argument warnings. */
     (void)score;
@@ -10,7 +10,7 @@ void add_score(Score *score, int points)
 }
 
 /* TODO: document caller-visible behaviour before implementing. */
-void reset_score(Score *score)
+void rstScore(Score *score)
 {
     /* TODO: implement. These casts only silence unused-argument warnings. */
     (void)score;

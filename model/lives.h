@@ -10,6 +10,6 @@ typedef struct {
     int value;
 } Lives;
 
-void lose_life(Lives *lives);
-void reset_lives(Lives *lives);
+void loseLife(Lives *lives);  /* Decrease player lives by one*/
+void rstLives(Lives *lives);  /* Reset players lives back to three*/
 #endif

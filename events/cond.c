@@ -2,56 +2,56 @@
 #include "cond.h"
 
 /* TODO: document caller-visible behaviour before implementing. */
-void handle_ball_top_edge(Model *model)
+void btopEdge(Model *model)
 {
     /* TODO: implement. These casts only silence unused-argument warnings. */
     (void)model;
 }
 
 /* TODO: document caller-visible behaviour before implementing. */
-void handle_ball_left_edge(Model *model)
+void blftEdge(Model *model)
 {
     /* TODO: implement. These casts only silence unused-argument warnings. */
     (void)model;
 }
 
 /* TODO: document caller-visible behaviour before implementing. */
-void handle_ball_right_edge(Model *model)
+void brgtEdge(Model *model)
 {
     /* TODO: implement. These casts only silence unused-argument warnings. */
     (void)model;
 }
 
 /* TODO: document caller-visible behaviour before implementing. */
-void handle_ball_bottom_edge(Model *model)
+void bbotEdge(Model *model)
 {
     /* TODO: implement. These casts only silence unused-argument warnings. */
     (void)model;
 }
 
 /* TODO: document caller-visible behaviour before implementing. */
-void handle_paddle_left_edge(Model *model)
+void plftEdge(Model *model)
 {
     /* TODO: implement. These casts only silence unused-argument warnings. */
     (void)model;
 }
 
 /* TODO: document caller-visible behaviour before implementing. */
-void handle_paddle_right_edge(Model *model)
+void prgtEdge(Model *model)
 {
     /* TODO: implement. These casts only silence unused-argument warnings. */
     (void)model;
 }
 
 /* TODO: document caller-visible behaviour before implementing. */
-void handle_ball_paddle_collision(Model *model)
+void bpadCol(Model *model)
 {
     /* TODO: implement. These casts only silence unused-argument warnings. */
     (void)model;
 }
 
 /* TODO: document caller-visible behaviour before implementing. */
-void handle_ball_brick_collision(Model *model, int brick_index)
+void bbrkCol(Model *model, int brick_index)
 {
     /* TODO: implement. These casts only silence unused-argument warnings. */
     (void)model;
@@ -59,14 +59,14 @@ void handle_ball_brick_collision(Model *model, int brick_index)
 }
 
 /* TODO: document caller-visible behaviour before implementing. */
-void handle_all_bricks_destroyed(Model *model)
+void brksDest(Model *model)
 {
     /* TODO: implement. These casts only silence unused-argument warnings. */
     (void)model;
 }
 
 /* TODO: document caller-visible behaviour before implementing. */
-void handle_all_levels_completed(Model *model)
+void lvlsComp(Model *model)
 {
     /* TODO: implement. These casts only silence unused-argument warnings. */
     (void)model;

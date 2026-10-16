@@ -3,14 +3,21 @@
 #define COND_H
 #include "model.h"
 
-void handle_ball_top_edge(Model *model);
-void handle_ball_left_edge(Model *model);
-void handle_ball_right_edge(Model *model); /* Needed for right-wall bounce. */
-void handle_ball_bottom_edge(Model *model);
-void handle_paddle_left_edge(Model *model);
-void handle_paddle_right_edge(Model *model);
-void handle_ball_paddle_collision(Model *model);
-void handle_ball_brick_collision(Model *model, int brick_index);
-void handle_all_bricks_destroyed(Model *model);
-void handle_all_levels_completed(Model *model);
+/* Ball and wall collisions*/
+void btopEdge(Model *model); /* Ball top wall collision*/
+void blftEdge(Model *model); /* Ball left wall collision*/
+void brgtEdge(Model *model); /* Ball right wall collision*/
+void bbotEdge(Model *model); /* Ball reaches bottom*/
+
+/* Paddle and wall collisions*/
+void plftEdge(Model *model);  /* Paddle left wall collision*/
+void prgtEdge(Model *model);  /* Paddle right wall collsion*/
+
+/* Ball and object collisions*/
+void bpadCol(Model *model);                   /* Ball paddle collision*/  
+void bbrkCol(Model *model, int brick_index);  /* Ball brick collision*/
+
+/* Game progress*/
+void brksDest(Model *model);  /* All bricks destroyed*/
+void lvlsComp(Model *model);  /* All levels completed*/
 #endif

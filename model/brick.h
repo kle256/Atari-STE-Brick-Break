@@ -19,6 +19,6 @@ typedef struct {
     int active;
 } Brick;
 
-void destroy_brick(Brick *brick);
-void reset_brick(Brick *brick);
+void dstrBrk(Brick *brick);     /* Destroy brick object*/
+void rstBrick(Brick *brick);    /* Reset brick placement*/
 #endif

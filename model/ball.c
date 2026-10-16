@@ -5,29 +5,24 @@ Author: Kevin Le
 */
 #include "ball.h"
 
-void move_ball(Ball *ball) {
+void movBall(Ball *ball) {
 
     /* TO DO*/
 
 }
 
-void move_ball(Ball *ball) {
-
-    /* TO DO*/
-}
-
-void bounce_horiz(Ball *ball) {
+void flipVx(Ball *ball) {
 
 }
 
-void bounce_vert(Ball *ball) {
+void flipVy(Ball *ball) {
 
 }
 
-void set_veloc(Ball *ball, int vx, int vy) {
+void setVel(Ball *ball, int vx, int vy) {
 
 }
 
-void reset_ball(Ball *ball, int x, int y) {
+void rstBall(Ball *ball, int x, int y) {
     
 }

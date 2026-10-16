@@ -3,6 +3,6 @@
 #define ASYNCH_H
 #include "model.h"
 
-void movLeft(Model *model);
-void moveRight(Model *model);
+void movLft(Model *model); /* Left arrow key move paddle left*/
+void movRgt(Model *model); /* Right arrow key move paddle right*/
 #endif

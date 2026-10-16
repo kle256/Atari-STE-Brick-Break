@@ -10,16 +10,16 @@ typedef struct { /* Struct for ball*/
 } Ball;
 
 /*Ball movement*/
-void move_ball(Ball *ball);
+void movBall(Ball *ball); /* Update ball position based on velocity*/
 
 /* Ball horizontal and vertical bounce*/
-void bounce_horiz(Ball *ball);
-void bounce_vert(Ball *ball);
+void flipVx(Ball *ball);   /* Reverse ball horizontal velocity*/
+void flipVy(Ball *ball);   /* Reverse ball vertical velocity*/     
 
 /* Ball velocity*/
-void set_veloc(Ball *ball, int vx, int vy);
+void setVel(Ball *ball, int vx, int vy); /* Set the ball horizontal or vertical velocity*/
 
 /* Reset ball */
-void reset_ball(Ball *ball, int x, int y);
+void rstBall(Ball *ball, int x, int y); /* Reset balls coordinates to set coordinates*/
 
 #endif

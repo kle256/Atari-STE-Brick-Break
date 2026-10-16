@@ -3,6 +3,6 @@
 #define SYNCH_H
 #include "model.h"
 
-void handle_ball_tick(Model *model);
-void handle_paddle_tick(Model *model);
+void bTick(Model *model); /* Clock ticks to update ball position*/
+void pTick(Model *model); /* Clock ticks to update paddle position*/
 #endif

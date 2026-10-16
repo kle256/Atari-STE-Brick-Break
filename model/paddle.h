@@ -11,7 +11,7 @@ typedef struct {
     int direction;  /* -1 = left, 0 = still, 1 = right. */
 } Paddle;
 
-void set_paddle_direction(Paddle *paddle, int direction);
-void move_paddle(Paddle *paddle);
-void reset_paddle(Paddle *paddle);
+void setPDir(Paddle *paddle, int direction); /* Set paddles horizontal movement*/
+void movPad(Paddle *paddle);                 /* Updates paddle position*/
+void rstPad(Paddle *paddle);                 /* Reset paddle to start position*/
 #endif

@@ -10,6 +10,6 @@ typedef struct {
     int value;
 } Score;
 
-void add_score(Score *score, int points);
-void reset_score(Score *score);
+void addScore(Score *score, int points); /* Increments displayed score*/
+void rstScore(Score *score);             /* Resets score back to zero*/
 #endif

@@ -10,12 +10,14 @@
 #define MAX_BRICKS 128 /* TODO: revise once your brick layouts are fixed. */
 #define TOTAL_LEVELS 2
 
+/* Current state of game*/
 typedef enum {
     GAME_PLAYING,
     GAME_WON,
     GAME_LOST
 } GameState;
 
+/* All game objects and their current states*/
 typedef struct {
     Ball ball;
     Paddle paddle;
@@ -27,8 +29,8 @@ typedef struct {
     GameState state;
 } Model;
 
-void init_model(Model *model);
-void reset_ball_and_paddle(Model *model);
-void advance_level(Model *model);
-void finish_game(Model *model, GameState outcome);
+void initMod(Model *model); /* Sets all game objects to their starting values*/
+void rstBP(Model *model);   /* Resets ball and paddle to starting position*/
+void nxtLvl(Model *model);  /* Sets the game state to next level*/
+void endGame(Model *model, GameState outcome); /* Ends game with outcome type*/
 #endif
