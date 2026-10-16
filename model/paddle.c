@@ -1,25 +1,30 @@
 /* paddle module. TODO: fill in each function and document assumptions. */
 #include "paddle.h"
 
-/* TODO: document caller-visible behaviour before implementing. */
+#define PSTRTX 280 /* paddle starting position for x*/
+#define PSTRTY 370 /* paddle starting position for y*/
+
+/* Sets paddle direction if input is valid*/
 void setPDir(Paddle *paddle, int direction)
 {
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)paddle;
-    (void)direction;
+    if (direction >= -1 && direction <= 1) {
+        paddle->direction = direction;
+    }
 }
 
-/* TODO: document caller-visible behaviour before implementing. */
+/* Updates paddle horizontal position*/
 void movPad(Paddle *paddle)
 {
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)paddle;
+    int temp;
+    temp = paddle->speed * paddle->direction;
+    paddle->x += temp;
 }
 
-/* TODO: document caller-visible behaviour before implementing. */
+/* Resets paddle to starting position and stops movement */
 void rstPad(Paddle *paddle)
 {
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)paddle;
+    paddle->x = PSTRTX;
+    paddle->y = PSTRTY;
+    paddle->direction = 0;
 }
 

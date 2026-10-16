@@ -1,17 +1,14 @@
-/* brick module. TODO: fill in each function and document assumptions. */
 #include "brick.h"
 
-/* TODO: document caller-visible behaviour before implementing. */
+/* Destroys brick*/
 void dstrBrk(Brick *brick)
 {
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)brick;
+    brick->active = 0;
 }
 
-/* TODO: document caller-visible behaviour before implementing. */
+/* Restores brick to active */
 void rstBrick(Brick *brick)
 {
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)brick;
+    brick->active = 1;
 }
 
