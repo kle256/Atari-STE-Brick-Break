@@ -1,17 +1,18 @@
-/* lives module. TODO: fill in each function and document assumptions. */
 #include "lives.h"
 
-/* TODO: document caller-visible behaviour before implementing. */
+#define STRTLVS 3
+
+/* Decreases lives by 1 */
 void loseLife(Lives *lives)
 {
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)lives;
+    if (lives->value > 0) {
+    lives->value -= 1;
+    }
 }
 
-/* TODO: document caller-visible behaviour before implementing. */
+/* Resets life back to original lives */
 void rstLives(Lives *lives)
 {
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)lives;
+    lives->value = STRTLVS;
 }
 
