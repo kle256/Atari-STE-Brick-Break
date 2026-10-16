@@ -2,10 +2,11 @@
 #include "model.h"
 
 /* TODO: document caller-visible behaviour before implementing. */
-void initMod(Model *model)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)model;
+void initMod(Model *model) {
+    model->state = GAME_PLAYING;
+    model->currLvl = 1;
+    
+    rstBall();
 }
 
 /* TODO: document caller-visible behaviour before implementing. */

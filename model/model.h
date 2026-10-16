@@ -25,7 +25,7 @@ typedef struct {
     int brick_count;
     Score score;
     Lives lives;
-    int current_level;
+    int currLvl;
     GameState state;
 } Model;
 
