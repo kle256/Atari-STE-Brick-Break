@@ -100,6 +100,7 @@ static void loadBrks(Model *model, int level) {
     int row, col, index, x, y, isOdd;
 
     model->brkCnt = BRKROWS * BRKCOLS;
+    model->brksLeft = model->brkCnt;
 
     for (row = 0; row < BRKROWS; row++) {
         y = BRKHEIGHT;

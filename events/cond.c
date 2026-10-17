@@ -83,7 +83,7 @@ void bpadCol(Model *model) {
 
     if (ballRgt > model->paddle.x && model->ball.x < padRgt) {
         if (ballBot > model->paddle.y && model->ball.y < padBot) {
-            if (model->ball.velo_y > 0 && prevBot <= model->ball.y) {
+            if (model->ball.velo_y > 0 && prevBot <= model->paddle.y) {
                 ballRep = model->paddle.y - model->ball.height;
                 model->ball.y = ballRep;
                 
@@ -120,6 +120,7 @@ void bbrkCol(Model *model, int brick_index) {
             brkBnce(model, brick);
             addScore(&model->score, brick->points);
             dstrBrk(brick);
+            model->brksLeft -= 1;
         }
     }
 
@@ -127,14 +128,24 @@ void bbrkCol(Model *model, int brick_index) {
 
 /* TODO: document caller-visible behaviour before implementing. */
 void brksDest(Model *model) {
-    
+    if (model->state != GAME_PLAYING ) {
+        return;
+    }
+
+    if (model->brksLeft > 0) {
+        return;
+    }
+
+    if (model->currLvl < TOTAL_LEVELS) {
+        nxtLvl(model);
+    } else {
+        lvlsComp(model);
+    }
 }
 
 /* TODO: document caller-visible behaviour before implementing. */
-void lvlsComp(Model *model)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)model;
+void lvlsComp(Model *model) {
+    endGame(model, GAME_WON);
 }
 
 static void padBnce(Model *model) {
