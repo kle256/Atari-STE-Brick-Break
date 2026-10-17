@@ -7,7 +7,7 @@
 void btopEdge(Model *model); /* Ball top wall collision*/
 void blftEdge(Model *model); /* Ball left wall collision*/
 void brgtEdge(Model *model); /* Ball right wall collision*/
-void bbotEdge(Model *model); /* Ball reaches bottom*/
+void outBnds(Model *model); /* Ball moves past paddle*/
 
 /* Paddle and wall collisions*/
 void plftEdge(Model *model);  /* Paddle left wall collision*/
