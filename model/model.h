@@ -27,6 +27,7 @@ typedef struct {
     Lives lives;
     int currLvl;
     GameState state;
+    int brksleft;
 } Model;
 
 void initMod(Model *model); /* Sets all game objects to their starting values*/
