@@ -1,17 +1,13 @@
-/* synch module. TODO: fill in each function and document assumptions. */
 #include "synch.h"
 
-/* TODO: document caller-visible behaviour before implementing. */
-void bTick(Model *model)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)model;
+/* Update ball position based on ball velocity*/
+void bTick(Model *model) {
+    movBall(&model->ball);
 }
 
-/* TODO: document caller-visible behaviour before implementing. */
-void pTick(Model *model)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)model;
+/* Moves paddle and sets direction to 0 after each tick*/
+void pTick(Model *model) {
+    movPad(&model->paddle);
+    setPDir(&model->paddle, 0);
 }
 

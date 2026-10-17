@@ -1,17 +1,13 @@
 /* asynch module. TODO: fill in each function and document assumptions. */
 #include "asynch.h"
 
-/* TODO: document caller-visible behaviour before implementing. */
-void movLft(Model *model)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)model;
+/* Sets paddle direction to left*/
+void movLft(Model *model) {
+    setPDir(&model->paddle, -1);
 }
 
-/* TODO: document caller-visible behaviour before implementing. */
-void movRgt(Model *model)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)model;
+/* Sets paddle direction to right*/
+void movRgt(Model *model) {
+    setPDir(&model->paddle, 1);
 }
 
