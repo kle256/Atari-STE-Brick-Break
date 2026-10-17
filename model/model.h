@@ -22,7 +22,7 @@ typedef struct {
     Ball ball;
     Paddle paddle;
     Brick bricks[MAX_BRICKS];
-    int brick_count;
+    int brkCnt;
     Score score;
     Lives lives;
     int currLvl;
