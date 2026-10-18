@@ -16,6 +16,9 @@
 #define BMP8WDTH 8
 #define BMP16WDTH 16
 #define BMP32WDTH 32
+#define FNTRWBYTES 256
+#define CHARHGHT 16
+#define CHARWDTH 8
 
 static int pxInBnds(int row, int col);
 static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
@@ -502,6 +505,45 @@ void plot_32bit_bitmap(UINT32 *base, int row, int col, const UINT32 *bitmap, UIN
 
         /* Advance to next screen row */
         lngOff += SCRROWLONGS;
+    }
+}
+
+void plot_character(UINT8 *base, int row, int col, char ch) {
+    UINT8 *font;
+    UINT8 glyph[CHARHGHT];
+    int r, fontOff;
+
+    font = (UINT8 *)V_FNT_AD;
+
+    /* Get character bitmap from atari*/
+    for (r = 0; r < CHARHGHT; r++) {
+        fontOff = r * FNTRWBYTES;
+        fontOff += (UINT8)ch;
+
+        glyph[r] = font[fontOff];
+    }
+
+    /* Plot character bitmap */
+    plot_8bit_bitmap(base, row, col, glyph, CHARHGHT);
+}
+
+void plot_string(UINT8 *base, int row, int col, char *ch) {
+    /* Plot character until end of string*/
+    while (*ch != '\0') {
+
+        /* Stop when past right screen edge*/
+        if (col >= SCRWDTH) {
+            return;
+        }
+
+        /* Plot current character*/
+        plot_character(base, row, col, *ch);
+
+        /* Advance to next character*/
+        ch++;
+
+        /* Move to next character position*/
+        col += CHARWDTH;    
     }
 }
 
