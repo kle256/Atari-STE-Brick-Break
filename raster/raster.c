@@ -1,4 +1,10 @@
-/* raster module. TODO: fill in each function and document assumptions. */
+/*
+ raster.c - Atari ST monochrom raster graphics library
+
+ Course: COMP 2659 - Computer Machinery II, Fall 2026
+ Author: Kevin Le
+ Purpose: Draw pixels, primitive shapes, bitmaps, and text.
+ */
 #include "raster.h"
 #include <stdio.h>
 #include <osbind.h>
@@ -335,6 +341,7 @@ void plot_triangle(UINT32 *base, int row, int col, UINT16 triangle_base,
 }
 
 /* Bitmap functions*/
+/* TODO: implement helper functions for repeated logic*/
 void plot_8bit_bitmap(UINT8 *base, int row, int col, const UINT8 *bitmap, UINT16 height) {
     UINT16 visWdth, skipX, skipY, visHght, i, bmpRow;
     UINT32 byteOff;
