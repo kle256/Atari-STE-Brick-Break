@@ -8,10 +8,13 @@
 #define SCRWDTH 640
 #define SCRHGHT 400
 #define SCRROWBYTES 80
+#define SCCROWWRDS 40
 #define SCRROWLONGS 20
+#define WRDMASK 0xFFFF
 #define LONGMASK 0xFFFFFFFF
 #define LINEWDTH 1
 #define BMP8WDTH 8
+#define BMP16WDTH 16
 
 static int pxInBnds(int row, int col);
 static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
@@ -385,6 +388,63 @@ void plot_8bit_bitmap(UINT8 *base, int row, int col, const UINT8 *bitmap, UINT16
         byteOff += SCRROWBYTES;
     }
 
+}
+
+void plot_16bit_bitmap(UINT16 *base, int row, int col, const UINT16 *bitmap, UINT16 height) {
+    UINT16 visWdth, skipX, skipY, visHght, srcBits, visMask;
+    UINT32 wordOff;
+    int clipRow, clipCol, bitShft, maskShft, endBit, nextShft, i, bmpRow;
+
+    clipRow = row;
+    clipCol = col;
+    visHght = height;
+
+    /* Determine visible portion of bitmap*/
+    visWdth = clipRegion(&clipRow, &clipCol, &visHght, BMP16WDTH, &skipX, &skipY);
+
+    if (visWdth == 0 || visHght == 0) {
+        return;
+    }
+    wordOff = (UINT32)clipRow * SCCROWWRDS;
+    wordOff += clipCol >> 4;
+
+    /* Calculate bit shift in word*/
+    bitShft = clipCol & 15;
+
+    /* Calculate visible bitmap mask*/
+    maskShft = BMP16WDTH - visWdth;
+
+    /* Shift mask to visible width*/
+    visMask = WRDMASK;
+    visMask = (UINT16)(visMask << maskShft);
+
+    /* Calculate word boundary*/
+    endBit = bitShft + visWdth;
+    nextShft = BMP16WDTH - bitShft;
+
+    /* Plot visible bitmap rows*/
+    for (i = 0; i < visHght; i++) {
+        bmpRow = i + skipY;
+        srcBits = bitmap[bmpRow];
+
+        /* Skip clipped source columns*/
+        srcBits <<= skipX;
+
+        /* Mask pixels outside visible width*/
+        srcBits &= visMask;
+
+        /* Plot pixels in first word*/
+        base[wordOff] |= (UINT16)(srcBits >> bitShft);
+
+        /* Plot remaining pixels in next word*/
+
+        if (endBit > BMP16WDTH) {
+            base[wordOff + 1] |= (UINT16)(srcBits << nextShft);
+        }
+        wordOff += SCCROWWRDS;
+    }
+
+    
 }
 
 

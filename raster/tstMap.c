@@ -8,10 +8,12 @@
 #define SCRROWBYTES 80
 #define SCRNLNGS 8000
 #define BMP8WDTH 8
+#define BMP16WDTH 16
 
 static UINT32 testBuf[SCRNLNGS];
 static UINT32 expectedBuf[SCRNLNGS];
 static UINT8 tallBmp[SCRHGHT];
+static UINT16 tallBmp16[SCRHGHT];
 static int passCnt = 0;
 static int failCnt = 0;
 
@@ -34,18 +36,45 @@ static const UINT8 empty[8] = {
     0, 0, 0, 0, 0, 0, 0, 0
 };
 
+/* A 16x16 sprite with distinct details for alignment testing */
+static const UINT16 sprite16[16] = {
+    0x0180, 0x03C0, 0x07E0, 0x0FF0,
+    0x1FF8, 0x3FFC, 0x7FFE, 0xFFFF,
+    0xE007, 0xE007, 0x7FFE, 0x3FFC,
+    0x1FF8, 0x0FF0, 0x03C0, 0x0180
+};
+
+static const UINT16 edges16[8] = {
+    0x8000, 0x0001, 0x8000, 0x0001,
+    0x8000, 0x0001, 0x8000, 0x0001
+};
+
+static const UINT16 solid16[8] = {
+    0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF,
+    0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF
+};
+
+static const UINT16 empty16[8] = {
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+
 static void clearBuffers(void);
 static void markExpected(int row, int col);
 static void buildExpected(int row, int col,
                           const UINT8 *bitmap, UINT16 height);
 static int matchBuffers(void);
+static void buildExpected16(int row, int col,
+                            const UINT16 *bitmap, UINT16 height);
+static void checkBitmap16(const char *label, int row, int col,
+                          const UINT16 *bitmap, UINT16 height);
+static void testPreserve16(void);
 static void checkBitmap(const char *label, int row, int col,
                         const UINT8 *bitmap, UINT16 height);
 static void testPreserve(void);
 static void testVisual(void);
 
 int main(void) {
-    int i;
+    int i, pass8, fail8;
 
     testVisual();
 
@@ -88,7 +117,53 @@ int main(void) {
     checkBitmap("full screen height", 0, 320, tallBmp, 400);
     testPreserve();
 
-    printf("\nBitmap tests: %d passed, %d failed\n", passCnt, failCnt);
+    pass8 = passCnt;
+    fail8 = failCnt;
+    printf("\n8-bit bitmap tests: %d passed, %d failed\n\n", pass8, fail8);
+
+    checkBitmap16("aligned word", 100, 80, sprite16, 16);
+    checkBitmap16("unaligned col 19", 100, 19, sprite16, 16);
+    checkBitmap16("cross at col 15", 100, 15, sprite16, 16);
+    checkBitmap16("cross at col 31", 100, 31, sprite16, 16);
+    checkBitmap16("cross at col 47", 100, 47, sprite16, 16);
+    checkBitmap16("single-bit edges", 150, 53, edges16, 8);
+    checkBitmap16("all bits on", 180, 103, solid16, 8);
+    checkBitmap16("all bits off", 180, 103, empty16, 8);
+
+    checkBitmap16("left clip -1", 200, -1, sprite16, 16);
+    checkBitmap16("left clip -3", 200, -3, sprite16, 16);
+    checkBitmap16("left clip -15", 200, -15, edges16, 8);
+    checkBitmap16("right clip 624", 200, 624, sprite16, 16);
+    checkBitmap16("right clip 625", 200, 625, sprite16, 16);
+    checkBitmap16("right clip 630", 200, 630, sprite16, 16);
+    checkBitmap16("right clip 639", 200, 639, solid16, 8);
+
+    checkBitmap16("top clip", -3, 220, sprite16, 16);
+    checkBitmap16("bottom clip", 396, 220, sprite16, 16);
+    checkBitmap16("top-left clip", -3, -3, sprite16, 16);
+    checkBitmap16("bottom-right clip", 397, 630, sprite16, 16);
+
+    checkBitmap16("zero height", 100, 100, sprite16, 0);
+    checkBitmap16("outside left", 100, -16, sprite16, 16);
+    checkBitmap16("outside right", 100, 640, sprite16, 16);
+    checkBitmap16("outside top", -16, 100, sprite16, 16);
+    checkBitmap16("outside bottom", 400, 100, sprite16, 16);
+
+    for (i = 0; i < SCRHGHT; i++) {
+        if ((i & 1) == 0) {
+            tallBmp16[i] = 0x8001;
+        } else {
+            tallBmp16[i] = 0xFFFF;
+        }
+    }
+
+    checkBitmap16("height above 255", 50, 290, tallBmp16, 300);
+    checkBitmap16("full screen height", 0, 320, tallBmp16, 400);
+    testPreserve16();
+
+    printf("\n16-bit bitmap tests: %d passed, %d failed\n",
+           passCnt - pass8, failCnt - fail8);
+    printf("Bitmap tests total: %d passed, %d failed\n", passCnt, failCnt);
     return failCnt != 0;
 }
 
@@ -141,6 +216,33 @@ static void buildExpected(int row, int col,
     }
 }
 
+/* Build reference image from individual 16-bit source pixels */
+static void buildExpected16(int row, int col,
+                            const UINT16 *bitmap, UINT16 height) {
+    UINT16 r, bitMask;
+    int c;
+    long scrRow, scrCol;
+
+    for (r = 0; r < height; r++) {
+        scrRow = (long)row + r;
+        if (scrRow < 0 || scrRow >= SCRHGHT) {
+            continue;
+        }
+
+        for (c = 0; c < BMP16WDTH; c++) {
+            scrCol = (long)col + c;
+            if (scrCol < 0 || scrCol >= SCRWDTH) {
+                continue;
+            }
+
+            bitMask = (UINT16)(0x8000 >> c);
+            if (bitmap[r] & bitMask) {
+                markExpected((int)scrRow, (int)scrCol);
+            }
+        }
+    }
+}
+
 /* Compare every framebuffer longword */
 static int matchBuffers(void) {
     int i;
@@ -164,6 +266,24 @@ static void checkBitmap(const char *label, int row, int col,
     passed = matchBuffers();
 
     printf("bitmap8 %-24s %s\n", label, passed ? "PASS" : "FAIL");
+    if (passed) {
+        passCnt++;
+    } else {
+        failCnt++;
+    }
+}
+
+/* Test 16-bit bitmap against independently calculated pixels */
+static void checkBitmap16(const char *label, int row, int col,
+                          const UINT16 *bitmap, UINT16 height) {
+    int passed;
+
+    clearBuffers();
+    buildExpected16(row, col, bitmap, height);
+    plot_16bit_bitmap((UINT16 *)testBuf, row, col, bitmap, height);
+    passed = matchBuffers();
+
+    printf("bitmap16 %-24s %s\n", label, passed ? "PASS" : "FAIL");
     if (passed) {
         passCnt++;
     } else {
@@ -195,6 +315,38 @@ static void testPreserve(void) {
 
     passed = matchBuffers();
     printf("bitmap8 %-24s %s\n", "preserve pixels",
+           passed ? "PASS" : "FAIL");
+    if (passed) {
+        passCnt++;
+    } else {
+        failCnt++;
+    }
+}
+
+/* Verify a 16-bit bitmap preserves existing framebuffer pixels */
+static void testPreserve16(void) {
+    UINT8 *bytes;
+    int passed;
+
+    clearBuffers();
+    bytes = (UINT8 *)testBuf;
+
+    /* Existing pixels inside and outside the 16x16 sprite */
+    plot_pixel(bytes, 100, 99);
+    plot_pixel(bytes, 100, 100);
+    plot_pixel(bytes, 110, 115);
+    plot_pixel(bytes, 116, 113);
+
+    markExpected(100, 99);
+    markExpected(100, 100);
+    markExpected(110, 115);
+    markExpected(116, 113);
+
+    buildExpected16(100, 100, sprite16, 16);
+    plot_16bit_bitmap((UINT16 *)testBuf, 100, 100, sprite16, 16);
+
+    passed = matchBuffers();
+    printf("bitmap16 %-24s %s\n", "preserve pixels",
            passed ? "PASS" : "FAIL");
     if (passed) {
         passCnt++;
@@ -239,6 +391,38 @@ static void testVisual(void) {
     plot_8bit_bitmap(bytes, -3, 400, sprite, 8);
     plot_8bit_bitmap(bytes, 396, 400, sprite, 8);
     plot_8bit_bitmap(bytes, 250, 636, sprite, 8);
+
+    /* Stage 1: 8-bit bitmap patterns */
+    Cnecin();
+    clear_screen(scrBase);
+
+    /* Stage 2: 16-bit aligned and unaligned sprites */
+    for (r = 0; r < 4; r++) {
+        for (c = 0; c < 4; c++) {
+            tileRow = 70 + r * 16;
+            tileCol = 80 + c * 16;
+            plot_16bit_bitmap((UINT16 *)scrBase, tileRow,
+                              tileCol, sprite16, 16);
+        }
+    }
+
+    for (r = 0; r < 4; r++) {
+        for (c = 0; c < 4; c++) {
+            tileRow = 70 + r * 16;
+            tileCol = 241 + c * 16;
+            plot_16bit_bitmap((UINT16 *)scrBase, tileRow,
+                              tileCol, sprite16, 16);
+        }
+    }
+
+    /* Individual 16-bit sprites and clipping at screen edges */
+    plot_16bit_bitmap((UINT16 *)scrBase, 200, 100, sprite16, 16);
+    plot_16bit_bitmap((UINT16 *)scrBase, 200, 119, sprite16, 16);
+    plot_16bit_bitmap((UINT16 *)scrBase, 200, 138, sprite16, 16);
+    plot_16bit_bitmap((UINT16 *)scrBase, 250, -5, sprite16, 16);
+    plot_16bit_bitmap((UINT16 *)scrBase, -5, 400, sprite16, 16);
+    plot_16bit_bitmap((UINT16 *)scrBase, 394, 400, sprite16, 16);
+    plot_16bit_bitmap((UINT16 *)scrBase, 250, 630, sprite16, 16);
 
     Cnecin();
     clear_screen(scrBase);
