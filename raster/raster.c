@@ -273,9 +273,60 @@ void plot_rectangle(UINT32 *base, int row, int col, UINT16 length, UINT16 width)
     plot_vertical_line(base, row, endCol, length);
 }
 
-void plot_rectangle(UINT32 *base, int row, int col, UINT16 length, UINT16 width) {
+void plot_square(UINT32 *base, int row, int col, UINT16 side) {
     plot_rectangle(base, row, col, side, side);
 }
+
+void plot_triangle(UINT32 *base, int row, int col, UINT16 triangle_base, 
+                   UINT16 height, UINT8 direction) {
+    int topRow, btmRow, lftCol, rgtCol, heightOff, baseOff;
+
+    if (triangle_base == 0 || height == 0) {
+        return;
+    }
+
+    if (direction > 3) {
+        return;
+    }
+
+    /* Calculate offset*/
+    heightOff = height - 1;
+    baseOff = triangle_base - 1;
+
+    /* Calculate ending position*/
+    topRow = row - heightOff;
+    btmRow = row + heightOff;
+    lftCol = col - baseOff;
+    rgtCol = col + baseOff;
+
+    /* Down and right*/
+    if (direction == 0) {
+        plot_horizontal_line(base, row, col, triangle_base);
+        plot_vertical_line(base, row, col, height);
+        plot_line(base, btmRow, col, row, rgtCol);
+    
+    /* Down and left*/
+    } else if (direction == 1) {
+        plot_horizontal_line(base, row, lftCol, triangle_base);
+        plot_vertical_line(base, row, col, height);
+        plot_line(base, btmRow, col, row, lftCol);
+
+    /* Up and right*/
+    } else if (direction == 2) {
+        plot_horizontal_line(base, row, col, triangle_base);
+        plot_vertical_line(base, topRow, col, height);
+        plot_line(base, topRow, col, row, rgtCol);
+
+    /* Up and left*/
+    } else if (direction == 3) {
+        plot_horizontal_line(base, row, lftCol, triangle_base);
+        plot_vertical_line(base, topRow, col, height);
+        plot_line(base, topRow, col, row, lftCol);
+
+    }
+}
+
+
 /* Clip rectangular region to screen boundary*/
 static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
                          UINT16 *skipX, UINT16 *skipY) {

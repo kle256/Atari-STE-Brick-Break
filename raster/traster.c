@@ -28,6 +28,8 @@ static int checkAxis(int startRow, int startCol,
 static int checkDiag45(int startRow, int startCol,
                        int endRow, int endCol);
 static int checkRect(int row, int col, UINT16 length, UINT16 width);
+static int checkTriangle(int row, int col, UINT16 triangle_base,
+                         UINT16 height, UINT8 direction);
 
 /* Test functions */
 static void testVisual(void);
@@ -52,6 +54,8 @@ static void testLineSingle(void);
 static void testLinePreserve(void);
 static void testRectangle(void);
 static void testRectanglePreserve(void);
+static void testTriangle(void);
+static void testTrianglePreserve(void);
 
 int main() {
     testVisual();
@@ -82,6 +86,9 @@ int main() {
 
     testRectangle();
     testRectanglePreserve();
+
+    testTriangle();
+    testTrianglePreserve();
 
     return 0;
 }
@@ -247,7 +254,19 @@ static void testVisual(void) {
     plot_rectangle(base, 330, 560, 100, 120);
     plot_rectangle(base, 260, 300, 1, 120);
     plot_rectangle(base, 100, 500, 150, 1);
+    Cnecin();
 
+    /* Stage 11: Draw all four triangle orientations */
+    clear_screen(base);
+
+    plot_triangle(base, 40, 60, 100, 80, 0);
+    plot_triangle(base, 40, 300, 100, 80, 1);
+    plot_triangle(base, 340, 60, 100, 80, 2);
+    plot_triangle(base, 340, 300, 100, 80, 3);
+
+    /* Unequal base and height */
+    plot_triangle(base, 150, 390, 170, 45, 0);
+    plot_triangle(base, 310, 600, 50, 120, 3);
     Cnecin();
 
     /* Clear display before automated tests */
@@ -1082,5 +1101,163 @@ static void testRectanglePreserve(void) {
     passed &= !pixelSet(100, 280);
 
     printf("rectangle preserve pixels: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Compare triangle against three independently drawn edges */
+static int checkTriangle(int row, int col, UINT16 triangle_base,
+                         UINT16 height, UINT8 direction) {
+    int vRow, hCol, rowDir, colDir;
+
+    clear_screen(testBuf);
+    clear_screen(expectedBuf);
+
+    plot_triangle(testBuf, row, col, triangle_base, height, direction);
+
+    if (triangle_base == 0 || height == 0 || direction > 3) {
+        return matchExpected();
+    }
+
+    /* Calculate direction of horizontal and vertical legs */
+    rowDir = 1;
+    colDir = 1;
+
+    if (direction == 2 || direction == 3) {
+        rowDir = -1;
+    }
+
+    if (direction == 1 || direction == 3) {
+        colDir = -1;
+    }
+
+    vRow = row + rowDir * (height - 1);
+    hCol = col + colDir * (triangle_base - 1);
+
+    /* Construct expected triangle from its three vertices */
+    plot_line(expectedBuf, row, col, row, hCol);
+    plot_line(expectedBuf, row, col, vRow, col);
+    plot_line(expectedBuf, vRow, col, row, hCol);
+
+    return matchExpected();
+}
+
+/* Test all triangle directions and boundary conditions */
+static void testTriangle(void) {
+    int passed;
+
+    passed = checkTriangle(100, 100, 50, 50, 0);
+    printf("triangle down-right: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(100, 300, 50, 50, 1);
+    printf("triangle down-left: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(300, 100, 50, 50, 2);
+    printf("triangle up-right: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(300, 300, 50, 50, 3);
+    printf("triangle up-left: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(120, 120, 80, 25, 0);
+    printf("triangle wide down-right: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(120, 320, 25, 80, 1);
+    printf("triangle tall down-left: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(300, 120, 80, 25, 2);
+    printf("triangle wide up-right: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(300, 320, 25, 80, 3);
+    printf("triangle tall up-left: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(-20, -20, 70, 70, 0);
+    printf("triangle top-left clip: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(-20, 659, 70, 70, 1);
+    printf("triangle top-right clip: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(420, -20, 70, 70, 2);
+    printf("triangle bottom-left clip: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(420, 659, 70, 70, 3);
+    printf("triangle bottom-right clip: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(200, 320, 1, 1, 0);
+    printf("triangle single pixel: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(200, 320, 1, 1, 3);
+    printf("triangle single pixel reverse: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(200, 320, 1, 40, 1);
+    printf("triangle one-column width: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(200, 320, 40, 1, 2);
+    printf("triangle one-row height: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(100, 100, 0, 50, 0);
+    printf("triangle zero base: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(100, 100, 50, 0, 1);
+    printf("triangle zero height: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(100, 100, 50, 50, 4);
+    printf("triangle invalid direction: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkTriangle(-100, -100, 20, 20, 0);
+    passed &= checkTriangle(500, 700, 30, 30, 0);
+    passed &= checkTriangle(-100, 700, 20, 20, 1);
+    passed &= checkTriangle(500, -100, 20, 20, 2);
+    printf("triangle outside screen: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Check existing pixels and unfilled interior */
+static void testTrianglePreserve(void) {
+    UINT8 *scrBase;
+    int passed;
+
+    scrBase = (UINT8 *)testBuf;
+    clear_screen(testBuf);
+
+    /* Existing interior and exterior pixels */
+    plot_pixel(scrBase, 115, 120);
+    plot_pixel(scrBase, 99, 110);
+    plot_pixel(scrBase, 125, 99);
+
+    plot_triangle(testBuf, 100, 100, 60, 40, 0);
+
+    passed = pixelSet(115, 120);
+    passed &= pixelSet(99, 110);
+    passed &= pixelSet(125, 99);
+
+    /* Check all three vertices */
+    passed &= pixelSet(100, 100);
+    passed &= pixelSet(100, 159);
+    passed &= pixelSet(139, 100);
+
+    /* Other pixels should remain clear */
+    passed &= !pixelSet(120, 110);
+    passed &= !pixelSet(140, 100);
+    passed &= !pixelSet(100, 160);
+
+    printf("triangle preserve pixels: %s\n",
            passed ? "PASS" : "FAIL");
 }
