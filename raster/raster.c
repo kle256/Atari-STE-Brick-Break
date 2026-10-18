@@ -8,6 +8,8 @@
 #define SCRWDTH 640
 #define SCRHGHT 400
 #define SCRROWBYTES 80
+#define SCRROWLONGS 20
+#define LONGMASK 0xFFFFFFFF
 
 static int pxInBnds(int row, int col);
 static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
@@ -87,6 +89,69 @@ void plot_pixel(UINT8 *base, int row, int col) {
         base[byteOff] |= bitMask;
     }
 
+}
+
+void plot_horizontal_line(UINT32 *base, int row, int col, UINT16 length) {
+    UINT32 *strtPtr, *endPtr, *currPtr;
+    UINT32 leftMask, rgtMask, rowOff;
+    UINT16 visWdth, skipX, skipY, height;
+    int clipRow, clipCol, endCol, strtBit, endBit, rgtShift, midLngs, i;
+
+    clipRow = row;
+    clipCol = col;
+    height = 1;
+
+    /* Determine visible portion of line*/
+    visWdth = clipRegion(&clipRow, &clipCol, &height, length, &skipX, &skipY);
+
+    if(visWdth == 0 || height ==0) {
+        return;
+    }
+
+    endCol = clipCol + visWdth;
+    endCol -= 1;
+
+    /* Calculate row offset*/
+    rowOff = (UINT32)clipRow * SCRROWLONGS;
+
+    /* Locate starting and ending longs*/
+    strtPtr = base + rowOff;
+    strtPtr += clipCol >> 5;
+
+    endPtr = base + rowOff;
+    endPtr += endCol >> 5;
+
+    /* Calculate bit positions */
+    strtBit = clipCol & 31;
+    endBit = endCol & 31;
+
+    /* Calculate starting long mask*/
+    leftMask = LONGMASK >> strtBit;
+
+    /* Calculate ending long mask*/
+    rgtShift = 31 - endBit;
+    rgtMask = LONGMASK << rgtShift;
+
+    /* Plot line with longs*/
+    if (strtPtr == endPtr) {
+        *strtPtr |= leftMask & rgtMask;
+
+    } else { 
+        /* Set start long*/
+        *strtPtr |= leftMask;
+
+        /* Fill longs between start and end*/
+        currPtr = strtPtr + 1;
+        midLngs = endPtr - currPtr;
+
+        for (i = 0; i < midLngs; i++) {
+            *currPtr = LONGMASK;
+            currPtr++;
+        }
+
+        /* Set ending long*/
+        *endPtr |= rgtMask;
+    }
 }
 
 /* Clip rectangular region to screen boundary*/
