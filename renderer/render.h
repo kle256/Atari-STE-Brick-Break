@@ -1,4 +1,7 @@
-#include "game_types.h"
+#ifndef RENDER_H
+#define RENDER_H
+#include "model.h"
+#include "raster.h"
 
 /* Renders the complete game state to the frame buffer. */
 void render(const Model *model, UINT8 *base, const UINT8 *font);

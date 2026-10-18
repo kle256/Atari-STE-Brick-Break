@@ -8,29 +8,45 @@
 #include "render.h"
 #include "raster.h"
 
+#define BSIZE 8
+
+/* 8x8 ball bitmap */
+static const UINT8 ballBmp[BSIZE] = {
+    0x3C,
+    0x7E,
+    0xFF,
+    0xFF,
+    0xFF,
+    0xFF,
+    0x7E,
+    0x3C
+};
+
+
 /* Renders the entire game model to the screen. */
-void render(const Model *model, UINT8 *base, const UINT8 *font)
-{
-    /* TODO: Render all game objects. */
-    (void)model;
-    (void)base;
-    (void)font;
+void render(const Model *model, UINT8 *base, const UINT8 *font) {
+
+
+   
 }
 
 /* Draws the ball using its position and size. */
-void rendBall(const Ball *ball, UINT8 *base)
-{
-    /* TODO: Render ball. */
-    (void)ball;
-    (void)base;
+void rendBall(const Ball *ball, UINT8 *base) {
+    plot_8bit_bitmap(base, ball->y, ball->x, ballBmp, BSIZE);
+    
 }
 
 /* Draws the paddle using its position and size. */
-void rendPad(const Paddle *paddle, UINT8 *base)
-{
-    /* TODO: Render paddle. */
-    (void)paddle;
-    (void)base;
+void rendPad(const Paddle *paddle, UINT8 *base) {
+    UINT32 *drawBase;
+    int row, drawRow;
+
+    drawBase = (UINT32 *)base;
+
+    for (row = 0; row < paddle->height; row++) {
+        drawRow = paddle->y + row;
+        plot_horizontal_line(drawBase, drawRow, paddle->x, paddle->width);
+    }
 }
 
 /* Draws a brick if it has not been destroyed. */
