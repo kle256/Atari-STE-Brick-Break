@@ -273,6 +273,9 @@ void plot_rectangle(UINT32 *base, int row, int col, UINT16 length, UINT16 width)
     plot_vertical_line(base, row, endCol, length);
 }
 
+void plot_rectangle(UINT32 *base, int row, int col, UINT16 length, UINT16 width) {
+    plot_rectangle(base, row, col, side, side);
+}
 /* Clip rectangular region to screen boundary*/
 static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
                          UINT16 *skipX, UINT16 *skipY) {
