@@ -10,15 +10,25 @@
 #define SCRHGHT 400
 
 static UINT32 testBuf[SCRNLNGS];
+static UINT32 expectedBuf[SCRNLNGS];
 
-/* Private test functions */
+/* Private test helpers */
 static void fillBlack(void);
 static int pixelSet(int row, int col);
 static int allBlack(void);
 static int allClear(void);
+static void markExpected(int row, int col);
+static int matchExpected(void);
 static int checkHLine(int row, int col, UINT16 length);
 static int checkVLine(int row, int col, UINT16 length);
+static int checkOctant(int row, int col, int sy, int sx,
+                       int steep, int reverse);
+static int checkAxis(int startRow, int startCol,
+                     int endRow, int endCol);
+static int checkDiag45(int startRow, int startCol,
+                       int endRow, int endCol);
 
+/* Test functions */
 static void testVisual(void);
 static void testClearScreen(void);
 static void testClearRegion(void);
@@ -33,6 +43,12 @@ static void testHLine(void);
 static void testHLinePreserve(void);
 static void testVLine(void);
 static void testVLinePreserve(void);
+static void testLineOctants(void);
+static void testLineReverse(void);
+static void testLineAxes(void);
+static void testLineDiag(void);
+static void testLineSingle(void);
+static void testLinePreserve(void);
 
 int main() {
     testVisual();
@@ -53,6 +69,13 @@ int main() {
 
     testVLine();
     testVLinePreserve();
+
+    testLineOctants();
+    testLineReverse();
+    testLineAxes();
+    testLineDiag();
+    testLineSingle();
+    testLinePreserve();
 
     return 0;
 }
@@ -99,6 +122,33 @@ static int allClear(void) {
 
     for (i = 0; i < SCRNLNGS; i++) {
         if (testBuf[i] != 0) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+/* Set one expected pixel using 32-bit longwords */
+static void markExpected(int row, int col) {
+    UINT32 lngOff, bitMask;
+    int bitShift;
+
+    lngOff = (UINT32)row * SCRROWLONGS;
+    lngOff += col >> 5;
+
+    bitShift = 31 - (col & 31);
+    bitMask = (UINT32)1 << bitShift;
+
+    expectedBuf[lngOff] |= bitMask;
+}
+
+/* Compare actual and expected framebuffers */
+static int matchExpected(void) {
+    int i;
+
+    for (i = 0; i < SCRNLNGS; i++) {
+        if (testBuf[i] != expectedBuf[i]) {
             return 0;
         }
     }
@@ -156,7 +206,6 @@ static void testVisual(void) {
     plot_horizontal_line(base, 210, -30, 180);
     plot_horizontal_line(base, 260, 550, 150);
     plot_horizontal_line(base, 310, 32, 576);
-
     Cnecin();
 
     /* Stage 8: Draw vertical lines */
@@ -168,6 +217,22 @@ static void testVisual(void) {
     plot_vertical_line(base, 320, 380, 120);
     plot_vertical_line(base, 40, 639, 300);
     plot_vertical_line(base, 20, 500, 350);
+    Cnecin();
+
+    /* Stage 9: Draw diagonal lines */
+    clear_screen(base);
+
+    plot_line(base, 30, 30, 120, 160);
+    plot_line(base, 30, 160, 120, 30);
+
+    plot_line(base, 130, 30, 170, 220);
+    plot_line(base, 130, 220, 170, 30);
+
+    plot_line(base, 200, 50, 330, 100);
+    plot_line(base, 200, 100, 330, 50);
+
+    plot_line(base, 200, 300, 360, 460);
+    plot_line(base, 360, 300, 200, 460);
 
     Cnecin();
 
@@ -590,5 +655,253 @@ static void testVLinePreserve(void) {
     passed &= !pixelSet(181, 100);
 
     printf("vline preserve pixels: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Check eight-pixel shallow or steep Bresenham pattern */
+static int checkOctant(int row, int col, int sy, int sx,
+                       int steep, int reverse) {
+    static int minorOff[8] = {0, 0, 1, 1, 2, 2, 3, 3};
+    int endRow, endCol, r, c, i;
+
+    clear_screen(testBuf);
+    clear_screen(expectedBuf);
+
+    if (steep) {
+        endRow = row + sy * 7;
+        endCol = col + sx * 3;
+    } else {
+        endRow = row + sy * 3;
+        endCol = col + sx * 7;
+    }
+
+    if (reverse) {
+        plot_line(testBuf, endRow, endCol, row, col);
+    } else {
+        plot_line(testBuf, row, col, endRow, endCol);
+    }
+
+    for (i = 0; i < 8; i++) {
+        if (steep) {
+            r = i;
+            c = minorOff[i];
+        } else {
+            r = minorOff[i];
+            c = i;
+        }
+
+        markExpected(row + sy * r, col + sx * c);
+    }
+
+    return matchExpected();
+}
+
+/* Check horizontal or vertical Bresenham line */
+static int checkAxis(int startRow, int startCol,
+                     int endRow, int endCol) {
+    int first, last, i;
+
+    clear_screen(testBuf);
+    clear_screen(expectedBuf);
+
+    plot_line(testBuf, startRow, startCol, endRow, endCol);
+
+    if (startRow == endRow) {
+        first = startCol;
+        last = endCol;
+
+        if (first > last) {
+            first = endCol;
+            last = startCol;
+        }
+
+        for (i = first; i <= last; i++) {
+            markExpected(startRow, i);
+        }
+    } else {
+        first = startRow;
+        last = endRow;
+
+        if (first > last) {
+            first = endRow;
+            last = startRow;
+        }
+
+        for (i = first; i <= last; i++) {
+            markExpected(i, startCol);
+        }
+    }
+
+    return matchExpected();
+}
+
+/* Check 45-degree line against expected pixels */
+static int checkDiag45(int startRow, int startCol,
+                       int endRow, int endCol) {
+    int rowStep, colStep, steps, i;
+
+    clear_screen(testBuf);
+    clear_screen(expectedBuf);
+
+    plot_line(testBuf, startRow, startCol, endRow, endCol);
+
+    rowStep = 1;
+    colStep = 1;
+
+    if (endRow < startRow) {
+        rowStep = -1;
+    }
+
+    if (endCol < startCol) {
+        colStep = -1;
+    }
+
+    steps = endRow - startRow;
+
+    if (steps < 0) {
+        steps = steps * -1;
+    }
+
+    for (i = 0; i <= steps; i++) {
+        markExpected(startRow + i * rowStep,
+                     startCol + i * colStep);
+    }
+
+    return matchExpected();
+}
+
+/* Test all eight Bresenham octants */
+static void testLineOctants(void) {
+    int passed;
+
+    passed = checkOctant(200, 320, 1, 1, 0, 0);
+    printf("line shallow down-right: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkOctant(200, 320, 1, -1, 0, 0);
+    printf("line shallow down-left: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkOctant(200, 320, -1, 1, 0, 0);
+    printf("line shallow up-right: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkOctant(200, 320, -1, -1, 0, 0);
+    printf("line shallow up-left: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkOctant(200, 320, 1, 1, 1, 0);
+    printf("line steep down-right: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkOctant(200, 320, 1, -1, 1, 0);
+    printf("line steep down-left: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkOctant(200, 320, -1, 1, 1, 0);
+    printf("line steep up-right: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkOctant(200, 320, -1, -1, 1, 0);
+    printf("line steep up-left: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Test reversed starting and ending points */
+static void testLineReverse(void) {
+    int passed;
+
+    passed = checkOctant(200, 320, 1, 1, 0, 1);
+    printf("line reverse shallow: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkOctant(200, 320, -1, 1, 1, 1);
+    printf("line reverse steep: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Test horizontal and vertical lines using Bresenham */
+static void testLineAxes(void) {
+    int passed;
+
+    passed = checkAxis(100, 50, 100, 250);
+    printf("line horizontal forward: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkAxis(100, 250, 100, 50);
+    printf("line horizontal reverse: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkAxis(50, 320, 300, 320);
+    printf("line vertical forward: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkAxis(300, 320, 50, 320);
+    printf("line vertical reverse: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Test long 45-degree diagonals */
+static void testLineDiag(void) {
+    int passed;
+
+    passed = checkDiag45(0, 0, 399, 399);
+    printf("line 45-degree down-right: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkDiag45(0, 639, 399, 240);
+    printf("line 45-degree down-left: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Test drawing a single pixel using Bresenham */
+static void testLineSingle(void) {
+    int passed;
+
+    clear_screen(testBuf);
+    clear_screen(expectedBuf);
+
+    plot_line(testBuf, 200, 320, 200, 320);
+    markExpected(200, 320);
+
+    passed = matchExpected();
+
+    printf("line single pixel: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Verify existing pixels are preserved by diagonal line */
+static void testLinePreserve(void) {
+    UINT8 *scrBase;
+    int passed;
+
+    scrBase = (UINT8 *)testBuf;
+    clear_screen(testBuf);
+
+    plot_pixel(scrBase, 100, 99);
+    plot_pixel(scrBase, 100, 108);
+    plot_pixel(scrBase, 99, 104);
+    plot_pixel(scrBase, 104, 103);
+
+    plot_line(testBuf, 100, 100, 103, 107);
+
+    passed = pixelSet(100, 99);
+    passed &= pixelSet(100, 108);
+    passed &= pixelSet(99, 104);
+    passed &= pixelSet(104, 103);
+
+    passed &= pixelSet(100, 100);
+    passed &= pixelSet(100, 101);
+    passed &= pixelSet(101, 102);
+    passed &= pixelSet(101, 103);
+    passed &= pixelSet(102, 104);
+    passed &= pixelSet(102, 105);
+    passed &= pixelSet(103, 106);
+    passed &= pixelSet(103, 107);
+
+    passed &= !pixelSet(101, 101);
+    passed &= !pixelSet(103, 108);
+
+    printf("line preserve pixels: %s\n",
            passed ? "PASS" : "FAIL");
 }

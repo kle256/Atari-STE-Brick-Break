@@ -192,6 +192,65 @@ void plot_vertical_line(UINT32 *base, int row, int col, UINT16 length) {
     }
 }
 
+void plot_line(UINT32 *base, int start_row, int start_col, int end_row, int end_col) {
+    int dx, dy, err, e2, sx, sy;
+
+    /* Calculate horizontal distance*/
+    dx = end_col - start_col;
+
+    /* flip dx if negative*/
+    if (dx < 0) {
+        dx = dx * -1;
+    }
+
+    /* Calculate negative vertical distance*/
+    dy = end_row - start_row;
+
+    /* flip dy if negative*/
+    if (dy < 0) {
+        dy = dy * -1;
+    }
+
+    dy = dy * -1;
+
+    /* Determine horizontal direction*/
+    if (start_col < end_col) {
+        sx = 1;
+    } else {
+        sx = -1;
+    }
+
+    /* Determine vertical direction*/
+    if (start_row < end_row) {
+        sy = 1;
+    } else {
+        sy = -1;
+    }
+
+    err = dx + dy;
+
+    /* Plot starting pixel*/
+    plot_pixel((UINT8 *)base, start_row, start_col);
+
+    /* Plot line using Bresenham's algorithm*/
+    while(start_row != end_row || start_col != end_col) {
+        e2 = 2 * err;
+
+        /* Move horizontally*/
+        if (e2 >= dy) {
+            err += dy;
+            start_col += sx;
+        }
+
+        /* move vertically */
+        if (e2 <= dx) {
+            err += dx;
+            start_row += sy;
+        }
+        plot_pixel((UINT8 *)base, start_row, start_col);
+    }
+}
+
 /* Clip rectangular region to screen boundary*/
 static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
                          UINT16 *skipX, UINT16 *skipY) {
