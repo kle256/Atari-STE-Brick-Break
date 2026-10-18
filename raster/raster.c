@@ -1,157 +1,128 @@
 /* raster module. TODO: fill in each function and document assumptions. */
 #include "raster.h"
+#include <stdio.h>
+#include <osbind.h>
+#include <linea.h>
 
-/* TODO: document caller-visible behaviour before implementing. */
-void clear_screen(UINT8 *base)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
+#define SCRNLNGS 8000
+#define SCRWDTH 640
+#define SCRHGHT 400
+#define SCRROWBYTES 80
+
+static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
+                         UINT16 *skipX, UINT16 *skipY);
+
+void clear_screen(UINT32 *base) {
+    int i;
+    UINT32 *loc = base;
+
+    for (i = 0; i < SCRNLNGS; i++) {
+        *(loc++) = 0;
+    }
 }
 
-/* TODO: document caller-visible behaviour before implementing. */
-void clear_region(UINT8 *base, int x, int y, int width, int height)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
-    (void)x;
-    (void)y;
-    (void)width;
-    (void)height;
+void clear_region(UINT32 *base, int row, int col, UINT16 length, UINT16 width) {
+    UINT8 *scrBase, *rowPtr; 
+    UINT8 strtBit, endBit, mask;
+    UINT16 visWdth, skipX, skipY, strtByte, endByte, r, b, height;
+    int clipRow, clipCol;
+
+    scrBase = (UINT8 *)base;
+    clipRow = row;
+    clipCol = col;
+    height = length;
+
+    /* Set visible region*/
+    visWdth = clipRegion(&clipRow, &clipCol, &height, width, &skipX, &skipY);
+
+    if (visWdth == 0 || height == 0) {
+        return;
+    }
+
+    /* Calculate start and end byte position*/
+    strtByte = clipCol >> 3;
+    endByte = (clipCol + visWdth -1) >> 3;
+    strtBit = clipCol & 7;
+    endBit = (clipCol + visWdth -1) & 7;
+
+    /* clear pixel in visible region*/
+    for (r = 0; r < height; r++) {
+        rowPtr = scrBase + (UINT32)(clipRow + r) * SCRROWBYTES;
+
+        for (b = strtByte; b <= endByte; b++) {
+            mask = 0xFF;
+
+            if (b== strtByte) {
+                mask &= (UINT8)(0xFF >> strtBit);
+            }
+
+            if (b== endByte) {
+                mask &= (UINT8)(0xFF << (7 - endBit));
+            }
+
+            rowPtr[b] &= (UINT8)~mask;
+        }
+    }
 }
 
-/* TODO: document caller-visible behaviour before implementing. */
-void plot_pixel(UINT8 *base, int x, int y, int color)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
-    (void)x;
-    (void)y;
-    (void)color;
-}
+/* Clip rectangular region to screen boundary*/
+static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
+                         UINT16 *skipX, UINT16 *skipY) {
+    long off;
+    UINT16 visWdth;
 
-/* TODO: document caller-visible behaviour before implementing. */
-void plot_horizontal_line(UINT8 *base, int x, int y, int length, int color)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
-    (void)x;
-    (void)y;
-    (void)length;
-    (void)color;
-}
+    *skipX = 0;
+    *skipY = 0;
 
-/* TODO: document caller-visible behaviour before implementing. */
-void plot_vertical_line(UINT8 *base, int x, int y, int length, int color)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
-    (void)x;
-    (void)y;
-    (void)length;
-    (void)color;
-}
+    if (*height == 0 || width == 0) {
+        return 0;
+    }
 
-/* TODO: document caller-visible behaviour before implementing. */
-void plot_line(UINT8 *base, int x1, int y1, int x2, int y2, int color)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
-    (void)x1;
-    (void)y1;
-    (void)x2;
-    (void)y2;
-    (void)color;
-}
+    /* Clip top boundary*/
+    if (*row < 0) {
+        off = -(long)*row;
 
-/* TODO: document caller-visible behaviour before implementing. */
-void plot_rectangle(UINT8 *base, int x, int y, int width, int height, int color)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
-    (void)x;
-    (void)y;
-    (void)width;
-    (void)height;
-    (void)color;
-}
+        if ( off >= *height) {
+            return 0;
+        }
 
-/* TODO: document caller-visible behaviour before implementing. */
-void plot_square(UINT8 *base, int x, int y, int size, int color)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
-    (void)x;
-    (void)y;
-    (void)size;
-    (void)color;
-}
+        *skipY = (UINT16)off;
+        *height -= *skipY;
+        *row = 0;
+    }
 
-/* TODO: document caller-visible behaviour before implementing. */
-void plot_triangle(UINT8 *base, int x1, int y1, int x2, int y2, int x3, int y3, int color)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
-    (void)x1;
-    (void)y1;
-    (void)x2;
-    (void)y2;
-    (void)x3;
-    (void)y3;
-    (void)color;
-}
+    /* Clip bottom boundary*/
+    if (*row >= SCRHGHT) {
+        return 0;
+    }
 
-/* TODO: document caller-visible behaviour before implementing. */
-void plot_8bit_bitmap(UINT8 *base, int x, int y, const UINT8 *bitmap, int height)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
-    (void)x;
-    (void)y;
-    (void)bitmap;
-    (void)height;
-}
+    if ((long)*row + *height > SCRHGHT) {
+        *height = SCRHGHT - *row;
+    }
 
-/* TODO: document caller-visible behaviour before implementing. */
-void plot_16bit_bitmap(UINT8 *base, int x, int y, const UINT16 *bitmap, int height)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
-    (void)x;
-    (void)y;
-    (void)bitmap;
-    (void)height;
-}
+    /* Clip left Boundary*/
+    if (*col < 0) {
+        off = -(long)*col;
 
-/* TODO: document caller-visible behaviour before implementing. */
-void plot_32bit_bitmap(UINT8 *base, int x, int y, const UINT32 *bitmap, int height)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
-    (void)x;
-    (void)y;
-    (void)bitmap;
-    (void)height;
-}
+        if (off >= width) {
+            return 0;
+        }
 
-/* TODO: document caller-visible behaviour before implementing. */
-void plot_character(UINT8 *base, int x, int y, char ch, const UINT8 *font)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
-    (void)x;
-    (void)y;
-    (void)ch;
-    (void)font;
-}
+        *skipX = (UINT16)off;
+        *col = 0;
+    }
 
-/* TODO: document caller-visible behaviour before implementing. */
-void plot_string(UINT8 *base, int x, int y, const char *string, const UINT8 *font)
-{
-    /* TODO: implement. These casts only silence unused-argument warnings. */
-    (void)base;
-    (void)x;
-    (void)y;
-    (void)string;
-    (void)font;
-}
+    /* Clip right boundary*/
+    if (*col >= SCRWDTH) {
+        return 0;
+    }
 
+    visWdth = width -*skipX;
+
+    if (visWdth > SCRWDTH - *col) {
+        visWdth = SCRWDTH - *col;
+    }
+
+    return visWdth;
+                    
+}
