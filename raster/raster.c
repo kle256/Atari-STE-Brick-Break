@@ -11,6 +11,7 @@
 #define SCRROWLONGS 20
 #define LONGMASK 0xFFFFFFFF
 #define LINEWDTH 1
+#define BMP8WDTH 8
 
 static int pxInBnds(int row, int col);
 static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
@@ -324,6 +325,66 @@ void plot_triangle(UINT32 *base, int row, int col, UINT16 triangle_base,
         plot_line(base, topRow, col, row, lftCol);
 
     }
+}
+
+void plot_8bit_bitmap(UINT8 *base, int row, int col, const UINT8 *bitmap, UINT16 height) {
+    UINT16 visWdth, skipX, skipY, visHght, i, bmpRow;
+    UINT32 byteOff;
+    UINT8 srcBits, visMask;
+    int clipRow, clipCol, bitShft, maskShft, endBit, nextShft;
+
+    clipRow = row;
+    clipCol = col;
+    visHght = height;
+
+    /* Determine visible portion of bitmap*/
+    visWdth = clipRegion(&clipRow, &clipCol, &visHght, BMP8WDTH, &skipX, &skipY);
+
+    if (visWdth == 0 || visHght == 0) {
+        return;
+    }
+
+    /*Calculate starting byte position*/
+    byteOff = (UINT32)clipRow * SCRROWBYTES;
+    byteOff += clipCol >> 3;
+
+    /* Calculate bit shift in byte*/
+    bitShft = clipCol & 7;
+
+    /* Calculate visible bitmap mask*/
+    maskShft = BMP8WDTH - visWdth;
+
+    /*Shift mask to visible width*/
+    visMask = 0xFF;
+    visMask = (UINT8)(visMask << maskShft);
+
+    /* Calculate byte boundary*/
+    endBit = bitShft + visWdth;
+    nextShft = BMP8WDTH - bitShft;
+
+    /* Read visible bitmap rows*/
+    for (i = 0; i < visHght; i++) {
+        bmpRow = i + skipY;
+        srcBits = bitmap[bmpRow];
+
+        /* Skip clipped source columns*/
+        srcBits <<= skipX;
+
+        /* Mask pixels outside visible width*/
+        srcBits &= visMask;
+
+        /* Plot pixels in first byte*/
+        base[byteOff] |= (UINT8)(srcBits >> bitShft);
+
+        /* Plot remaining pixels in next byte*/
+        if (endBit > BMP8WDTH) {
+            base[byteOff + 1] |= (UINT8)(srcBits << nextShft);
+        }
+
+        /* Advance to next screen row*/
+        byteOff += SCRROWBYTES;
+    }
+
 }
 
 
