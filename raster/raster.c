@@ -251,6 +251,28 @@ void plot_line(UINT32 *base, int start_row, int start_col, int end_row, int end_
     }
 }
 
+void plot_rectangle(UINT32 *base, int row, int col, UINT16 length, UINT16 width) {
+    int endRow, endCol;
+
+    if (length == 0 || width == 0) {
+        return;
+    }
+
+    /* Calculate ending positions*/
+    endRow = row + length;
+    endRow -= 1;
+    endCol = col + width;
+    endCol -= 1;
+
+    /* Plot horizontal edges*/
+    plot_horizontal_line(base, row, col, width);
+    plot_horizontal_line(base, endRow, col, width);
+
+    /* Plot vertical edges*/
+    plot_vertical_line(base, row, col, length);
+    plot_vertical_line(base, row, endCol, length);
+}
+
 /* Clip rectangular region to screen boundary*/
 static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
                          UINT16 *skipX, UINT16 *skipY) {

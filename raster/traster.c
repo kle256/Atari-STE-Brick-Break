@@ -27,6 +27,7 @@ static int checkAxis(int startRow, int startCol,
                      int endRow, int endCol);
 static int checkDiag45(int startRow, int startCol,
                        int endRow, int endCol);
+static int checkRect(int row, int col, UINT16 length, UINT16 width);
 
 /* Test functions */
 static void testVisual(void);
@@ -49,6 +50,8 @@ static void testLineAxes(void);
 static void testLineDiag(void);
 static void testLineSingle(void);
 static void testLinePreserve(void);
+static void testRectangle(void);
+static void testRectanglePreserve(void);
 
 int main() {
     testVisual();
@@ -76,6 +79,9 @@ int main() {
     testLineDiag();
     testLineSingle();
     testLinePreserve();
+
+    testRectangle();
+    testRectanglePreserve();
 
     return 0;
 }
@@ -224,15 +230,23 @@ static void testVisual(void) {
 
     plot_line(base, 30, 30, 120, 160);
     plot_line(base, 30, 160, 120, 30);
-
     plot_line(base, 130, 30, 170, 220);
     plot_line(base, 130, 220, 170, 30);
-
     plot_line(base, 200, 50, 330, 100);
     plot_line(base, 200, 100, 330, 50);
-
     plot_line(base, 200, 300, 360, 460);
     plot_line(base, 360, 300, 200, 460);
+    Cnecin();
+
+    /* Stage 10: Draw rectangle outlines */
+    clear_screen(base);
+
+    plot_rectangle(base, 40, 60, 50, 100);
+    plot_rectangle(base, 100, 200, 120, 180);
+    plot_rectangle(base, -20, -20, 70, 100);
+    plot_rectangle(base, 330, 560, 100, 120);
+    plot_rectangle(base, 260, 300, 1, 120);
+    plot_rectangle(base, 100, 500, 150, 1);
 
     Cnecin();
 
@@ -903,5 +917,170 @@ static void testLinePreserve(void) {
     passed &= !pixelSet(103, 108);
 
     printf("line preserve pixels: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Build expected rectangle outline and compare framebuffers */
+static int checkRect(int row, int col, UINT16 length, UINT16 width) {
+    long endRow, endCol;
+    int r, c;
+
+    clear_screen(testBuf);
+    clear_screen(expectedBuf);
+
+    plot_rectangle(testBuf, row, col, length, width);
+
+    if (length == 0 || width == 0) {
+        return matchExpected();
+    }
+
+    endRow = (long)row + length - 1;
+    endCol = (long)col + width - 1;
+
+    /* Expected top horizontal edge */
+    if (row >= 0 && row < SCRHGHT) {
+        for (c = 0; c < SCRWDTH; c++) {
+            if (c >= col && (long)c <= endCol) {
+                markExpected(row, c);
+            }
+        }
+    }
+
+    /* Expected bottom horizontal edge */
+    if (endRow >= 0 && endRow < SCRHGHT) {
+        for (c = 0; c < SCRWDTH; c++) {
+            if (c >= col && (long)c <= endCol) {
+                markExpected((int)endRow, c);
+            }
+        }
+    }
+
+    /* Expected left vertical edge */
+    if (col >= 0 && col < SCRWDTH) {
+        for (r = 0; r < SCRHGHT; r++) {
+            if (r >= row && (long)r <= endRow) {
+                markExpected(r, col);
+            }
+        }
+    }
+
+    /* Expected right vertical edge */
+    if (endCol >= 0 && endCol < SCRWDTH) {
+        for (r = 0; r < SCRHGHT; r++) {
+            if (r >= row && (long)r <= endRow) {
+                markExpected(r, (int)endCol);
+            }
+        }
+    }
+
+    return matchExpected();
+}
+
+/* Test rectangle outlines, clipping and dimensions */
+static void testRectangle(void) {
+    int passed;
+
+    passed = checkRect(100, 200, 50, 100);
+    printf("rectangle normal: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkRect(0, 0, 400, 640);
+    printf("rectangle screen border: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkRect(-20, -20, 70, 100);
+    printf("rectangle top-left clip: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkRect(370, 600, 80, 100);
+    printf("rectangle bottom-right clip: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkRect(-20, 100, 80, 120);
+    printf("rectangle top clip: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkRect(100, -20, 80, 120);
+    printf("rectangle left clip: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkRect(100, 600, 80, 100);
+    printf("rectangle right clip: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkRect(370, 100, 80, 120);
+    printf("rectangle bottom clip: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkRect(100, 200, 1, 100);
+    printf("rectangle one row: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkRect(100, 200, 50, 1);
+    printf("rectangle one column: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkRect(100, 200, 1, 1);
+    printf("rectangle single pixel: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkRect(100, 200, 0, 100);
+    printf("rectangle zero height: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkRect(100, 200, 50, 0);
+    printf("rectangle zero width: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkRect(450, 100, 50, 100);
+    passed &= checkRect(100, 700, 50, 100);
+    passed &= checkRect(-100, -100, 20, 20);
+
+    printf("rectangle outside screen: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Verify outline does not fill or overwrite existing pixels */
+static void testRectanglePreserve(void) {
+    UINT8 *scrBase;
+    int passed;
+
+    scrBase = (UINT8 *)testBuf;
+    clear_screen(testBuf);
+
+    /* Existing pixels inside and outside rectangle */
+    plot_pixel(scrBase, 115, 215);
+    plot_pixel(scrBase, 99, 240);
+    plot_pixel(scrBase, 110, 199);
+
+    plot_rectangle(testBuf, 100, 200, 40, 80);
+
+    passed = pixelSet(115, 215);
+    passed &= pixelSet(99, 240);
+    passed &= pixelSet(110, 199);
+
+    /* Rectangle corners */
+    passed &= pixelSet(100, 200);
+    passed &= pixelSet(100, 279);
+    passed &= pixelSet(139, 200);
+    passed &= pixelSet(139, 279);
+
+    /* Middle of each edge */
+    passed &= pixelSet(100, 240);
+    passed &= pixelSet(139, 240);
+    passed &= pixelSet(120, 200);
+    passed &= pixelSet(120, 279);
+
+    /* Interior must remain unfilled */
+    passed &= !pixelSet(110, 220);
+    passed &= !pixelSet(120, 240);
+
+    /* Pixels outside rectangle must remain clear */
+    passed &= !pixelSet(99, 200);
+    passed &= !pixelSet(140, 200);
+    passed &= !pixelSet(100, 199);
+    passed &= !pixelSet(100, 280);
+
+    printf("rectangle preserve pixels: %s\n",
            passed ? "PASS" : "FAIL");
 }
