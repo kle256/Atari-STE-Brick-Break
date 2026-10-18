@@ -17,6 +17,7 @@ static int pixelSet(int row, int col);
 static int allBlack(void);
 static int allClear(void);
 static int checkHLine(int row, int col, UINT16 length);
+static int checkVLine(int row, int col, UINT16 length);
 
 static void testVisual(void);
 static void testClearScreen(void);
@@ -30,6 +31,8 @@ static void testPixelBounds(void);
 static void testPixelBits(void);
 static void testHLine(void);
 static void testHLinePreserve(void);
+static void testVLine(void);
+static void testVLinePreserve(void);
 
 int main() {
     testVisual();
@@ -48,10 +51,13 @@ int main() {
     testHLine();
     testHLinePreserve();
 
+    testVLine();
+    testVLinePreserve();
+
     return 0;
 }
 
-/* Fills test framebuffer with black pixels */
+/* Fill test framebuffer with black pixels */
 static void fillBlack(void) {
     int i;
 
@@ -60,7 +66,7 @@ static void fillBlack(void) {
     }
 }
 
-/* Checks whether specified pixel is set */
+/* Check whether specified pixel is set */
 static int pixelSet(int row, int col) {
     UINT8 *scrBase;
     UINT32 byteOff;
@@ -74,7 +80,7 @@ static int pixelSet(int row, int col) {
     return (scrBase[byteOff] & mask) != 0;
 }
 
-/* Checks whether entire framebuffer is black */
+/* Check whether entire framebuffer is black */
 static int allBlack(void) {
     int i;
 
@@ -87,7 +93,7 @@ static int allBlack(void) {
     return 1;
 }
 
-/* Checks whether entire framebuffer is clear */
+/* Check whether entire framebuffer is clear */
 static int allClear(void) {
     int i;
 
@@ -100,7 +106,7 @@ static int allClear(void) {
     return 1;
 }
 
-/* Visually tests raster drawing on physical screen */
+/* Visually test raster drawing on physical screen */
 static void testVisual(void) {
     UINT32 *base;
     UINT8 *base8;
@@ -153,11 +159,23 @@ static void testVisual(void) {
 
     Cnecin();
 
+    /* Stage 8: Draw vertical lines */
+    clear_screen(base);
+
+    plot_vertical_line(base, 40, 80, 80);
+    plot_vertical_line(base, 70, 160, 150);
+    plot_vertical_line(base, -30, 260, 110);
+    plot_vertical_line(base, 320, 380, 120);
+    plot_vertical_line(base, 40, 639, 300);
+    plot_vertical_line(base, 20, 500, 350);
+
+    Cnecin();
+
     /* Clear display before automated tests */
     clear_screen(base);
 }
 
-/* Tests clearing entire framebuffer */
+/* Test clearing entire framebuffer */
 static void testClearScreen(void) {
     int passed;
 
@@ -170,7 +188,7 @@ static void testClearScreen(void) {
            passed ? "PASS" : "FAIL");
 }
 
-/* Tests normal region clearing and top-left clipping */
+/* Test normal region clearing and top-left clipping */
 static void testClearRegion(void) {
     int passed;
 
@@ -199,7 +217,7 @@ static void testClearRegion(void) {
            passed ? "PASS" : "FAIL");
 }
 
-/* Tests region clipping at right and bottom edges */
+/* Test region clipping at right and bottom edges */
 static void testRegionBounds(void) {
     int passed;
 
@@ -226,7 +244,7 @@ static void testRegionBounds(void) {
            passed ? "PASS" : "FAIL");
 }
 
-/* Tests regions that should make no changes */
+/* Test regions that should make no changes */
 static void testRegionNoOp(void) {
     int passed;
 
@@ -252,7 +270,7 @@ static void testRegionNoOp(void) {
            passed ? "PASS" : "FAIL");
 }
 
-/* Tests clearing individual bits within a byte */
+/* Test clearing individual bits within a byte */
 static void testRegionBits(void) {
     int passed;
 
@@ -269,7 +287,7 @@ static void testRegionBits(void) {
            passed ? "PASS" : "FAIL");
 }
 
-/* Tests plotting a single pixel */
+/* Test plotting a single pixel */
 static void testPlotPixel(void) {
     UINT8 *scrBase;
     int passed;
@@ -289,7 +307,7 @@ static void testPlotPixel(void) {
            passed ? "PASS" : "FAIL");
 }
 
-/* Tests pixel plotting at screen corners */
+/* Test pixel plotting at screen corners */
 static void testPixelCorners(void) {
     UINT8 *scrBase;
     int passed;
@@ -311,7 +329,7 @@ static void testPixelCorners(void) {
            passed ? "PASS" : "FAIL");
 }
 
-/* Tests invalid pixel coordinates */
+/* Test invalid pixel coordinates */
 static void testPixelBounds(void) {
     UINT8 *scrBase;
     int passed;
@@ -330,7 +348,7 @@ static void testPixelBounds(void) {
            passed ? "PASS" : "FAIL");
 }
 
-/* Tests pixel plotting across byte boundaries */
+/* Test pixel plotting across byte boundaries */
 static void testPixelBits(void) {
     UINT8 *scrBase;
     int passed;
@@ -350,7 +368,7 @@ static void testPixelBits(void) {
            passed ? "PASS" : "FAIL");
 }
 
-/* Verifies expected horizontal line across framebuffer */
+/* Check horizontal line against expected framebuffer */
 static int checkHLine(int row, int col, UINT16 length) {
     int r, c, i, expected;
     UINT32 rowOff;
@@ -385,43 +403,45 @@ static int checkHLine(int row, int col, UINT16 length) {
     return 1;
 }
 
-/* Tests horizontal lines of different lengths and positions */
+/* Test horizontal line positions and clipping */
 static void testHLine(void) {
     int passed;
 
-    /* Line inside one longword */
     passed = checkHLine(100, 5, 10);
-    printf("hline single long: %s\n", passed ? "PASS" : "FAIL");
+    printf("hline single long: %s\n",
+           passed ? "PASS" : "FAIL");
 
-    /* Line crossing longword boundary */
     passed = checkHLine(100, 28, 10);
-    printf("hline cross long: %s\n", passed ? "PASS" : "FAIL");
+    printf("hline cross long: %s\n",
+           passed ? "PASS" : "FAIL");
 
-    /* Line spanning several longwords */
     passed = checkHLine(200, 12, 160);
-    printf("hline multiple longs: %s\n", passed ? "PASS" : "FAIL");
+    printf("hline multiple longs: %s\n",
+           passed ? "PASS" : "FAIL");
 
-    /* Line aligned to longword boundary */
     passed = checkHLine(200, 32, 64);
-    printf("hline aligned: %s\n", passed ? "PASS" : "FAIL");
+    printf("hline aligned: %s\n",
+           passed ? "PASS" : "FAIL");
 
-    /* Left and right clipping */
     passed = checkHLine(120, -20, 100);
-    printf("hline left clip: %s\n", passed ? "PASS" : "FAIL");
+    printf("hline left clip: %s\n",
+           passed ? "PASS" : "FAIL");
 
     passed = checkHLine(150, 620, 100);
-    printf("hline right clip: %s\n", passed ? "PASS" : "FAIL");
+    printf("hline right clip: %s\n",
+           passed ? "PASS" : "FAIL");
 
-    /* First and last framebuffer rows */
     passed = checkHLine(0, 0, 640);
-    printf("hline top row: %s\n", passed ? "PASS" : "FAIL");
+    printf("hline top row: %s\n",
+           passed ? "PASS" : "FAIL");
 
     passed = checkHLine(399, 0, 640);
-    printf("hline bottom row: %s\n", passed ? "PASS" : "FAIL");
+    printf("hline bottom row: %s\n",
+           passed ? "PASS" : "FAIL");
 
-    /* Zero-length and off-screen lines */
     passed = checkHLine(200, 100, 0);
-    printf("hline zero length: %s\n", passed ? "PASS" : "FAIL");
+    printf("hline zero length: %s\n",
+           passed ? "PASS" : "FAIL");
 
     passed = checkHLine(100, -100, 40);
     passed &= checkHLine(100, 700, 40);
@@ -432,7 +452,7 @@ static void testHLine(void) {
            passed ? "PASS" : "FAIL");
 }
 
-/* Tests preserving pixels outside horizontal line */
+/* Verify existing pixels are preserved by horizontal line */
 static void testHLinePreserve(void) {
     UINT8 *scrBase;
     int passed;
@@ -440,7 +460,6 @@ static void testHLinePreserve(void) {
     scrBase = (UINT8 *)testBuf;
     clear_screen(testBuf);
 
-    /* Set existing pixels beside the line */
     plot_pixel(scrBase, 200, 199);
     plot_pixel(scrBase, 200, 320);
     plot_pixel(scrBase, 199, 250);
@@ -455,5 +474,121 @@ static void testHLinePreserve(void) {
     passed &= !pixelSet(201, 250);
 
     printf("hline preserve pixels: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Check vertical line against expected framebuffer */
+static int checkVLine(int row, int col, UINT16 length) {
+    UINT32 expected, bitMask, rowOff;
+    long endRow;
+    int r, i, inCol, drawRow;
+
+    clear_screen(testBuf);
+    plot_vertical_line(testBuf, row, col, length);
+
+    endRow = (long)row + length;
+    inCol = col >= 0 && col < SCRWDTH;
+    bitMask = 0;
+
+    if (inCol) {
+        bitMask = (UINT32)0x80000000 >> (col & 31);
+    }
+
+    for (r = 0; r < SCRHGHT; r++) {
+        rowOff = (UINT32)r * SCRROWLONGS;
+
+        drawRow = length > 0 && inCol;
+        drawRow &= r >= row && (long)r < endRow;
+
+        for (i = 0; i < SCRROWLONGS; i++) {
+            expected = 0;
+
+            if (drawRow && i == (col >> 5)) {
+                expected = bitMask;
+            }
+
+            if (testBuf[rowOff + i] != expected) {
+                return 0;
+            }
+        }
+    }
+
+    return 1;
+}
+
+/* Test vertical line positions and clipping */
+static void testVLine(void) {
+    int passed;
+
+    passed = checkVLine(100, 200, 80);
+    printf("vline normal: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkVLine(50, 0, 100);
+    printf("vline left edge: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkVLine(50, 639, 100);
+    printf("vline right edge: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkVLine(50, 31, 100);
+    passed &= checkVLine(50, 32, 100);
+    printf("vline long boundary: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkVLine(-20, 100, 80);
+    printf("vline top clipping: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkVLine(380, 100, 50);
+    printf("vline bottom clipping: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkVLine(0, 320, 400);
+    printf("vline full height: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkVLine(200, 320, 1);
+    printf("vline single pixel: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkVLine(200, 320, 0);
+    printf("vline zero length: %s\n",
+           passed ? "PASS" : "FAIL");
+
+    passed = checkVLine(100, -1, 50);
+    passed &= checkVLine(100, 640, 50);
+    passed &= checkVLine(-100, 100, 50);
+    passed &= checkVLine(400, 100, 50);
+
+    printf("vline outside screen: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Verify existing pixels are preserved by vertical line */
+static void testVLinePreserve(void) {
+    UINT8 *scrBase;
+    int passed;
+
+    scrBase = (UINT8 *)testBuf;
+    clear_screen(testBuf);
+
+    plot_pixel(scrBase, 100, 99);
+    plot_pixel(scrBase, 100, 101);
+    plot_pixel(scrBase, 99, 100);
+    plot_pixel(scrBase, 180, 100);
+
+    plot_vertical_line(testBuf, 100, 100, 80);
+
+    passed = pixelSet(100, 99);
+    passed &= pixelSet(100, 101);
+    passed &= pixelSet(99, 100);
+    passed &= pixelSet(180, 100);
+    passed &= pixelSet(100, 100);
+    passed &= pixelSet(179, 100);
+    passed &= !pixelSet(181, 100);
+
+    printf("vline preserve pixels: %s\n",
            passed ? "PASS" : "FAIL");
 }

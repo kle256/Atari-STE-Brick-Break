@@ -10,6 +10,7 @@
 #define SCRROWBYTES 80
 #define SCRROWLONGS 20
 #define LONGMASK 0xFFFFFFFF
+#define LINEWDTH 1
 
 static int pxInBnds(int row, int col);
 static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
@@ -151,6 +152,43 @@ void plot_horizontal_line(UINT32 *base, int row, int col, UINT16 length) {
 
         /* Set ending long*/
         *endPtr |= rgtMask;
+    }
+}
+
+void plot_vertical_line(UINT32 *base, int row, int col, UINT16 length) {
+    UINT32 *currPtr; 
+    UINT32 bitMask, rowOff;
+    UINT16 visWdth, skipX, skipY, height;
+    int clipRow, clipCol, bitPos, bitShift, i;
+
+    clipRow = row;
+    clipCol = col;
+    height = length;
+
+    /* Determine visible portion of line*/
+    visWdth = clipRegion(&clipRow, &clipCol, &height, LINEWDTH, &skipX, &skipY);
+
+    if (visWdth == 0 || height == 0) {
+        return;
+    }
+
+    /* Calculate starting long*/
+    rowOff = (UINT32)clipRow * SCRROWLONGS;
+
+    currPtr = base + rowOff;
+    currPtr += clipCol >> 5;
+
+    /* Calculate bit position*/
+    bitPos = clipCol & 31;
+    bitShift = 31 - bitPos;
+
+    /* Shift single set bit into position*/
+    bitMask = (UINT32)1 << bitShift;
+
+    /* Plot vertical line*/
+    for (i = 0; i < height; i++) {
+        *currPtr |= bitMask;
+        currPtr += SCRROWLONGS;
     }
 }
 
