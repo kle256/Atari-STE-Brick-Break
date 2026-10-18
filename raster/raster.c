@@ -9,8 +9,10 @@
 #define SCRHGHT 400
 #define SCRROWBYTES 80
 
+static int pxInBnds(int row, int col);
 static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
                          UINT16 *skipX, UINT16 *skipY);
+
 
 void clear_screen(UINT32 *base) {
     int i;
@@ -63,6 +65,28 @@ void clear_region(UINT32 *base, int row, int col, UINT16 length, UINT16 width) {
             rowPtr[b] &= (UINT8)~mask;
         }
     }
+}
+
+/* Plot pixel within screen boundaries*/
+void plot_pixel(UINT8 *base, int row, int col) {
+    UINT32 byteOff;
+    UINT8 bitMask;
+    int bitPos, bitShift;
+    
+    if(pxInBnds(row, col)) {
+        /* Calculate byte position*/
+        byteOff = (UINT32)row * SCRROWBYTES;
+        byteOff += col >> 3;
+
+        /* Calculate bit mask*/
+        bitPos = col & 7;
+        bitShift = 7 - bitPos;
+        bitMask = (UINT8)(1 << bitShift);
+
+        /* Set pixel*/
+        base[byteOff] |= bitMask;
+    }
+
 }
 
 /* Clip rectangular region to screen boundary*/
@@ -125,4 +149,8 @@ static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
 
     return visWdth;
                     
+}
+
+static int pxInBnds(int row, int col) {
+    return (unsigned int)row < SCRHGHT && (unsigned int)col < SCRWDTH;
 }

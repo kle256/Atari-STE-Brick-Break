@@ -12,12 +12,17 @@ static UINT32 testBuf[SCRNLNGS];
 static void fillBlack(void);
 static int pixelSet(int row, int col);
 static int allBlack(void);
+static int allClear(void);
 static void testVisual(void);
 static void testClearScreen(void);
 static void testClearRegion(void);
 static void testRegionBounds(void);
 static void testRegionNoOp(void);
 static void testRegionBits(void);
+static void testPlotPixel(void);
+static void testPixelCorners(void);
+static void testPixelBounds(void);
+static void testPixelBits(void);
 
 int main() {
     /* Visual framebuffer tests */
@@ -29,6 +34,10 @@ int main() {
     testRegionBounds();
     testRegionNoOp();
     testRegionBits();
+    testPlotPixel();
+    testPixelCorners();
+    testPixelBounds();
+    testPixelBits();
 
     return 0;
 }
@@ -45,14 +54,15 @@ static void fillBlack(void) {
 /* Checks whether a specified pixel is set */
 static int pixelSet(int row, int col) {
     UINT8 *scrBase;
-    UINT32 offset;
+    UINT32 byteOff;
     UINT8 mask;
 
     scrBase = (UINT8 *)testBuf;
-    offset = (UINT32)row * SCRROWBYTES + (col >> 3);
+    byteOff = (UINT32)row * SCRROWBYTES;
+    byteOff += col >> 3;
     mask = (UINT8)(0x80 >> (col & 7));
 
-    return (scrBase[offset] & mask) != 0;
+    return (scrBase[byteOff] & mask) != 0;
 }
 
 /* Checks whether entire framebuffer is black */
@@ -68,12 +78,27 @@ static int allBlack(void) {
     return 1;
 }
 
-/* Visually tests screen clearing and region clipping */
+/* Checks whether entire framebuffer is cleared */
+static int allClear(void) {
+    int i;
+
+    for (i = 0; i < SCRNLNGS; i++) {
+        if (testBuf[i] != 0) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+/* Visually tests raster functions on physical screen */
 static void testVisual(void) {
     UINT32 *base;
+    UINT8 *base8;
     int i;
 
     base = (UINT32 *)Physbase();
+    base8 = (UINT8 *)base;
 
     /* Stage 1: Fill screen black */
     for (i = 0; i < SCRNLNGS; i++) {
@@ -96,25 +121,33 @@ static void testVisual(void) {
     /* Stage 5: Clear entire screen */
     clear_screen(base);
     Cnecin();
+
+    /* Stage 6: Draw cross using individual pixels */
+    for (i = 280; i < 360; i++) {
+        plot_pixel(base8, 200, i);
+    }
+
+    for (i = 160; i < 240; i++) {
+        plot_pixel(base8, i, 320);
+    }
+
+    Cnecin();
+
+    /* Clear display before automated test results */
+    clear_screen(base);
 }
 
 /* Tests clearing the entire framebuffer */
 static void testClearScreen(void) {
-    int i, passed;
+    int passed;
 
     fillBlack();
     clear_screen(testBuf);
 
-    passed = 1;
+    passed = allClear();
 
-    for (i = 0; i < SCRNLNGS; i++) {
-        if (testBuf[i] != 0) {
-            passed = 0;
-            break;
-        }
-    }
-
-    printf("clear_screen: %s\n", passed ? "PASS" : "FAIL");
+    printf("clear_screen: %s\n",
+           passed ? "PASS" : "FAIL");
 }
 
 /* Tests normal region clearing and top-left clipping */
@@ -206,7 +239,7 @@ static void testRegionNoOp(void) {
            passed ? "PASS" : "FAIL");
 }
 
-/* Tests clearing individual bits within one byte */
+/* Tests clearing selected bits within one byte */
 static void testRegionBits(void) {
     int passed;
 
@@ -220,5 +253,88 @@ static void testRegionBits(void) {
     passed &= pixelSet(50, 13);
 
     printf("clear_region bit mask: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Tests plotting a single pixel */
+static void testPlotPixel(void) {
+    UINT8 *scrBase;
+    int passed;
+
+    scrBase = (UINT8 *)testBuf;
+    clear_screen(testBuf);
+
+    /* Plot pixel near screen center */
+    plot_pixel(scrBase, 200, 320);
+
+    passed = pixelSet(200, 320);
+    passed &= !pixelSet(200, 319);
+    passed &= !pixelSet(200, 321);
+    passed &= !pixelSet(199, 320);
+    passed &= !pixelSet(201, 320);
+
+    printf("plot_pixel normal: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Tests plotting pixels at screen corners */
+static void testPixelCorners(void) {
+    UINT8 *scrBase;
+    int passed;
+
+    scrBase = (UINT8 *)testBuf;
+    clear_screen(testBuf);
+
+    plot_pixel(scrBase, 0, 0);
+    plot_pixel(scrBase, 0, 639);
+    plot_pixel(scrBase, 399, 0);
+    plot_pixel(scrBase, 399, 639);
+
+    passed = pixelSet(0, 0);
+    passed &= pixelSet(0, 639);
+    passed &= pixelSet(399, 0);
+    passed &= pixelSet(399, 639);
+
+    printf("plot_pixel corners: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Tests invalid pixel coordinates */
+static void testPixelBounds(void) {
+    UINT8 *scrBase;
+    int passed;
+
+    scrBase = (UINT8 *)testBuf;
+    clear_screen(testBuf);
+
+    plot_pixel(scrBase, -1, 100);
+    plot_pixel(scrBase, 400, 100);
+    plot_pixel(scrBase, 100, -1);
+    plot_pixel(scrBase, 100, 640);
+
+    passed = allClear();
+
+    printf("plot_pixel bounds: %s\n",
+           passed ? "PASS" : "FAIL");
+}
+
+/* Tests plotting individual bits across byte boundaries */
+static void testPixelBits(void) {
+    UINT8 *scrBase;
+    int passed;
+
+    scrBase = (UINT8 *)testBuf;
+    clear_screen(testBuf);
+
+    /* Pixels in adjacent bytes */
+    plot_pixel(scrBase, 50, 7);
+    plot_pixel(scrBase, 50, 8);
+
+    passed = pixelSet(50, 7);
+    passed &= pixelSet(50, 8);
+    passed &= !pixelSet(50, 6);
+    passed &= !pixelSet(50, 9);
+
+    printf("plot_pixel bit positions: %s\n",
            passed ? "PASS" : "FAIL");
 }
