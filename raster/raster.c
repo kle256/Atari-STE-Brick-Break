@@ -15,6 +15,7 @@
 #define LINEWDTH 1
 #define BMP8WDTH 8
 #define BMP16WDTH 16
+#define BMP32WDTH 32
 
 static int pxInBnds(int row, int col);
 static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
@@ -330,6 +331,7 @@ void plot_triangle(UINT32 *base, int row, int col, UINT16 triangle_base,
     }
 }
 
+/* Bitmap functions*/
 void plot_8bit_bitmap(UINT8 *base, int row, int col, const UINT8 *bitmap, UINT16 height) {
     UINT16 visWdth, skipX, skipY, visHght, i, bmpRow;
     UINT32 byteOff;
@@ -442,11 +444,66 @@ void plot_16bit_bitmap(UINT16 *base, int row, int col, const UINT16 *bitmap, UIN
             base[wordOff + 1] |= (UINT16)(srcBits << nextShft);
         }
         wordOff += SCCROWWRDS;
-    }
-
-    
+    }   
 }
 
+void plot_32bit_bitmap(UINT32 *base, int row, int col, const UINT32 *bitmap, UINT16 height) {
+    UINT16 visWdth, skipX, skipY, visHght;
+    UINT32 lngOff, srcBits, visMask; 
+    int clipRow, clipCol, bitShft, maskShft, endBit, nextShft, i, bmpRow;
+
+    clipRow = row;
+    clipCol = col;
+    visHght = height;
+
+    /* Determine visible portion of bitmap*/
+    visWdth = clipRegion(&clipRow, &clipCol, &visHght, BMP32WDTH, &skipX, &skipY);
+
+    if (visWdth == 0 || visHght == 0) {
+        return;
+    }
+
+    /* calculate starting long position*/
+    lngOff = (UINT32)clipRow * SCRROWLONGS;
+    lngOff += clipCol >> 5;
+
+    /* Calculate bit shift long*/
+    bitShft = clipCol & 31;
+
+    /* Calculate visible bitmap mask*/
+    maskShft = BMP32WDTH - visWdth;
+
+    /* Shift mask to visible width*/
+    visMask = LONGMASK;
+    visMask = visMask << maskShft;
+
+    /* Calculate long boundary*/
+    endBit = bitShft + visWdth;
+    nextShft = BMP32WDTH - bitShft;
+
+    /* Plot visible bitmap rows */
+    for (i = 0; i < visHght; i++) {
+        bmpRow = i + skipY;
+        srcBits = bitmap[bmpRow];
+
+        /* Skip clipped source columns */
+        srcBits <<= skipX;
+
+        /* Mask pixels outside visible width */
+        srcBits &= visMask;
+
+        /* Plot pixels in first long */
+        base[lngOff] |= srcBits >> bitShft;
+
+        /* Plot remaining pixels in next long */
+        if (endBit > BMP32WDTH) {
+            base[lngOff + 1] |= srcBits << nextShft;
+        }
+
+        /* Advance to next screen row */
+        lngOff += SCRROWLONGS;
+    }
+}
 
 /* Clip rectangular region to screen boundary*/
 static UINT16 clipRegion(int *row, int *col, UINT16 *height, UINT16 width,
