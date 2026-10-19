@@ -1,4 +1,8 @@
-/* model module. TODO: fill in each function and document assumptions. */
+/*
+ Author: Kevin Le
+ Date: October 19, 2026
+ Purpose: Initializes the game model and manages level progression.
+ */
 #include "model.h"
 
 /* Ball dimensions constants*/
@@ -74,7 +78,7 @@ void initMod(Model *model) {
     loadBrks(model, model->currLvl);
 }
 
-/* TODO: document caller-visible behaviour before implementing. */
+/* Resets ball and paddle to start position and velocity */
 void rstBP(Model *model) {
     int x, y, pCent;
 
@@ -95,19 +99,20 @@ void rstBP(Model *model) {
     setVel(&model->ball, BVELX, BVELY);
 }
 
-/* TODO: document caller-visible behaviour before implementing. */
+/* Advance game to next level or end game if all levels done */
 void nxtLvl(Model *model) {
     if (model->currLvl < TOTAL_LEVELS) {
         model->currLvl += 1;
         loadBrks(model, model->currLvl);
         rstBP(model);
     } else {
+        /* All levels done*/
         endGame(model, GAME_WON);
     }
     
 }
 
-/* TODO: document caller-visible behaviour before implementing. */
+/* Sets game state to outcome */
 void endGame(Model *model, GameState outcome) {
     model->state = outcome;
 }

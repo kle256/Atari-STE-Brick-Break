@@ -1,3 +1,9 @@
+/*
+Author: Kevin Le
+Date: October 19,2026
+Purpose: Handles remaining lives and reset
+*/
+
 #include "lives.h"
 
 #define STRTLVS 3

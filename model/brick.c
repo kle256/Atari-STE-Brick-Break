@@ -1,3 +1,9 @@
+/*
+Author: Kevin Le
+Date: October 19,2026
+Purpose: Handles brick initialization
+*/
+
 #include "brick.h"
 
 /* Destroys brick*/

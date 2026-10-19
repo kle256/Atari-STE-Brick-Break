@@ -1,3 +1,9 @@
+/*
+Author: Kevin Le
+Date: October 19,2026
+Purpose: Handles timed ball and paddle movement
+*/
+
 #include "synch.h"
 
 /* Update ball position based on ball velocity*/

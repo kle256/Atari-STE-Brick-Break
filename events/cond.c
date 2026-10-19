@@ -1,4 +1,8 @@
-/* Conditional event handlers for collisions and game progression. */
+/*
+Author: Kevin Le
+Date: October 19,2026
+Purpose: Handles collisions and conditional game events
+*/
 #include "cond.h"
 
 #define SCRWIDTH 640

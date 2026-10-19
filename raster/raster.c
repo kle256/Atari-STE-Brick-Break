@@ -1,9 +1,7 @@
 /*
- raster.c - Atari ST monochrom raster graphics library
-
- Course: COMP 2659 - Computer Machinery II, Fall 2026
  Author: Kevin Le
- Purpose: Draw pixels, primitive shapes, bitmaps, and text.
+ Date: October 19, 2026
+ Purpose: Provides implementation of raster graphic routines
  */
 #include "raster.h"
 #include <stdio.h>

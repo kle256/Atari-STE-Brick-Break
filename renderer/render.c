@@ -1,7 +1,7 @@
 /*
- * Renderer module.
- * Draws the current game model using the raster library.
- * Author: Kevin Le
+ Author: Kevin Le
+ Date: October 19, 2026
+ Purpose: Draws game objects using raster library
  */
 
 #include "render.h"

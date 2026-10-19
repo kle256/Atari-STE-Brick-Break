@@ -1,10 +1,14 @@
-/* paddle module. TODO: fill in each function and document assumptions. */
+/*
+ Author: Kevin Le
+ Date: October 19, 2026
+ Purpose: Handles paddle movement, direction, and reset.
+ */
 #include "paddle.h"
 
 #define PSTRTX 280 /* paddle starting position for x*/
 #define PSTRTY 370 /* paddle starting position for y*/
 
-/* Sets paddle direction if input is valid*/
+/* Sets paddle direction if input valid*/
 void setPDir(Paddle *paddle, int direction)
 {
     if (direction >= -1 && direction <= 1) {

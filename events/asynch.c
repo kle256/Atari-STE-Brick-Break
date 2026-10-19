@@ -1,4 +1,8 @@
-/* asynch module. TODO: fill in each function and document assumptions. */
+/*
+Author: Kevin Le
+Date: October 19,2026
+Purpose: Handles ball movement, velocity, and reset
+*/
 #include "asynch.h"
 
 /* Sets paddle direction to left*/
