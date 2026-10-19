@@ -1,7 +1,7 @@
 /*
 Author: Kevin Le
 Date: October 19,2026
-Purpose: Handles ball movement, velocity, and reset
+Purpose: Handles asynch paddle movement requests
 */
 #include "asynch.h"
 

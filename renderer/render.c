@@ -105,6 +105,7 @@ void rendLife(Lives *lives, UINT8 *base) {
     plot_string(base, lives->y, lives->x, lifeTxt);
 }
 
+/* Draw game won or game over message on screen*/
 void rendState(GameState state, UINT8 *base) {
     if (state == GAME_WON) {
         plot_string(base, MSGROW, MSGCOL, "YOU WIN!");

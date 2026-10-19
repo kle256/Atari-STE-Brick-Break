@@ -117,6 +117,7 @@ void endGame(Model *model, GameState outcome) {
     model->state = outcome;
 }
 
+/* Load and initialize brick layout for selected level*/
 static void loadBrks(Model *model, int level) {
     int row, col, index, x, y, isOdd;
 
@@ -151,6 +152,7 @@ static void loadBrks(Model *model, int level) {
 
 }
 
+/* Set brick position, dimension, score, state*/
 static void initBrk(Brick *brick, int x, int y, int row) {
     int points;
 

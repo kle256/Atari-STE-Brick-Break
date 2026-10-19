@@ -7,7 +7,7 @@
 #include "score.h"
 #include "lives.h"
 
-#define MAX_BRICKS 128 /* TODO: revise once your brick layouts are fixed. */
+#define MAX_BRICKS 128
 #define TOTAL_LEVELS 2
 
 /* Current state of game*/
