@@ -2,7 +2,7 @@
 #define BALL_H
 
 typedef struct { /* Struct for ball*/
-    unsigned int x, y;
+    int x, y;
     int velo_x;
     int velo_y;
     int width;

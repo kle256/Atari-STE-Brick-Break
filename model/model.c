@@ -30,6 +30,13 @@
 
 #define BRKSHIFT 16
 
+/*HUD positions and dimensions*/
+#define SCOREX 16
+#define LIVEX 520
+#define HUDY 16
+#define HUDWIDTH 80
+#define HUDHEIGHT 16
+
 static void loadBrks(Model *model, int level);
 static void initBrk(Brick *brick, int x, int y, int row);
 
@@ -52,10 +59,19 @@ void initMod(Model *model) {
     rstScore(&model->score);
     rstLives(&model->lives);
 
-    loadBrks(model, model->currLvl);
+    /* Initialize score display */
+    model->score.x = SCOREX;
+    model->score.y = HUDY;
+    model->score.width = HUDWIDTH;
+    model->score.height = HUDHEIGHT;
 
-    /* TODO: Initialize score and lives display properties */
-    /* TODO: Initialize Level 1 bricks and brkCnt */
+    /* Initialize lives display */
+    model->lives.x = LIVEX;
+    model->lives.y = HUDY;
+    model->lives.width = HUDWIDTH;
+    model->lives.height = HUDHEIGHT;
+
+    loadBrks(model, model->currLvl);
 }
 
 /* TODO: document caller-visible behaviour before implementing. */
