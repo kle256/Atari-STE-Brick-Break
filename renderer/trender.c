@@ -1,51 +1,69 @@
+
 /*
  * Renderer test driver.
- * Tests ball and paddle rendering in STEEM.
+ * Tests the complete game renderer in STEEM.
  * Author: Kevin Le
  */
 
 #include <osbind.h>
+#include <linea.h>
 #include "render.h"
 #include "raster.h"
-
-#define BSIZE 8
-#define PWIDTH 80
-#define PHEIGHT 12
+#include "model.h"
 
 int main(void) {
+    static Model model;
     UINT8 *base;
-    UINT32 *drawBase;
-    Ball ball;
-    Paddle paddle;
 
     base = (UINT8 *)Physbase();
-    drawBase = (UINT32 *)base;
+    linea0();
 
-    /* Initialize ball. */
-    ball.x = 316;
-    ball.y = 196;
-    ball.width = BSIZE;
-    ball.height = BSIZE;
-    ball.velo_x = 0;
-    ball.velo_y = 0;
+    /* Initialize complete game model. */
+    initMod(&model);
 
-    /* Initialize paddle. */
-    paddle.x = 280;
-    paddle.y = 370;
-    paddle.width = PWIDTH;
-    paddle.height = PHEIGHT;
-    paddle.speed = 0;
-    paddle.direction = 0;
+    /* Initialize score display. */
+    model.score.x = 16;
+    model.score.y = 16;
+    model.score.width = 80;
+    model.score.height = 16;
 
-    /* Render ball and paddle. */
-    clear_screen(drawBase);
-    rendBall(&ball, base);
-    rendPad(&paddle, base);
+    /* Initialize lives display. */
+    model.lives.x = 520;
+    model.lives.y = 16;
+    model.lives.width = 80;
+    model.lives.height = 16;
 
-    /* Wait for keypress. */
+    /* Test 1: Initial Level 1. */
+    render(&model, base);
     Cnecin();
 
-    clear_screen(drawBase);
+    /* Test 2: Destroy bricks and update HUD. */
+    model.bricks[0].active = 0;
+    model.bricks[1].active = 0;
+    model.brksLeft = 30;
+    model.score.value = 80;
+    model.lives.value = 2;
+
+    render(&model, base);
+    Cnecin();
+
+    /* Test 3: Advance to Level 2. */
+    nxtLvl(&model);
+
+    render(&model, base);
+    Cnecin();
+
+    /* Test 4: Victory screen. */
+    model.state = GAME_WON;
+
+    render(&model, base);
+    Cnecin();
+
+    /* Test 5: Game over screen. */
+    model.state = GAME_LOST;
+
+    render(&model, base);
+    Cnecin();
 
     return 0;
 }
