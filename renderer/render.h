@@ -24,4 +24,6 @@ void rendLife(Lives *lives, UINT8 *base);
 /* Renders current game state outcome*/
 void rendState(GameState state, UINT8 *base);
 
+void rendUpdate(Model *model, Model *prev, UINT8 *base);
+
 #endif

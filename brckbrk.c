@@ -14,11 +14,19 @@ Purpose: Initializes game and handles main game loop
 
 /* Stores current game state*/
 static Model game;
+static Model prev;
 
 int main(void) {
     UINT8 *base;
+    UINT32 timeThen, timeNow;
     char input;
-    boolean quit;
+    boolean quit,
+            pddlMved,
+            ballMved;
+    int oldPdleX, 
+        oldBallX,
+        oldBallY,
+        i;
 
     /* Set game objects to their starting values*/
     initMod(&game);
@@ -29,8 +37,12 @@ int main(void) {
 
     /* Draw first frame */
     render(&game, base);
+    prev = game;
 
     quit = FALSE;
+
+    /* Check for clock tick*/
+    timeThen = getTime();
 
     while (quit == FALSE) {
 
@@ -41,6 +53,52 @@ int main(void) {
             if (input == 'q' || input == 'Q') {
                 quit = TRUE;
             } 
+            else if (input == 'a' || input == 'A') {
+                movLft(&game);
+            }
+            else if (input == 'd' || input == 'D') {
+                movRgt(&game);
+            }
+        }
+
+        /* Check for clock tick*/
+        timeNow = getTime();
+        if (quit == FALSE && timeNow != timeThen) {
+            timeThen = timeNow;
+
+            oldPdleX = game.paddle.x;
+            oldBallX = game.ball.x;
+            oldBallY = game.ball.y;
+
+            if (game.state == GAME_PLAYING) {
+                pTick(&game);
+                bTick(&game);
+
+                plftEdge(&game);
+                prgtEdge(&game);
+                blftEdge(&game);
+                brgtEdge(&game);
+                btopEdge(&game);
+
+                bpadCol(&game);
+
+                /* Check ball collision with each brick */
+                for (i = 0; i < game.brkCnt; i++) {
+                    bbrkCol(&game, i);
+                }
+
+                
+                outBnds(&game);
+                brkDest(&game);
+            }
+
+            /* Redraw if paddle or ball changed position */
+            pddlMved = (game.paddle.x != oldPdleX);
+            ballMved = (game.ball.x != oldBallX || game.ball.y != oldBallY);
+
+            if (pddlMved || ballMved) {
+                render(&game, base);
+            }
         }
     }
 
