@@ -8,6 +8,7 @@ Purpose: Handles collisions and conditional game events
 #define SCRWIDTH 640
 #define SCRHEIGHT 400
 #define OFFSET 10
+#define PLAYTOP 40
 
 /* Private helper functions for collision detection*/
 static void padBnce(Model *model);
@@ -15,8 +16,9 @@ static void brkBnce(Model *model, Brick *brick);
 
 /* Reverses ball vertical velocity at top wall collision*/
 void btopEdge(Model *model) {
-    if (model->ball.y <= 0 && model->ball.velo_y < 0) {
-        model->ball.y = 0;
+    if (model->ball.y <= PLAYTOP && model->ball.velo_y < 0) {
+        
+        model->ball.y = PLAYTOP;
         flipVy(&model->ball);
     }
 }

@@ -38,7 +38,7 @@
 #define SCOREX 16
 #define LIVEX 520
 #define HUDY 16
-#define HUDWIDTH 80
+#define HUDWIDTH 96
 #define HUDHEIGHT 16
 
 static void loadBrks(Model *model, int level);

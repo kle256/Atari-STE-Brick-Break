@@ -12,32 +12,53 @@ Purpose: Initializes game and handles main game loop
 #include "input.h"
 #include "clock.h"
 
+#define SCRSIZE 32000
+#define SCRALGN 256
+
 /* Stores current game state*/
 static Model game;
 static Model prev;
+static Model prevBck;
+
+/* Extra screen memory with room for alignment */
+static UINT8 screenMem[SCRSIZE + SCRALGN - 1];
 
 int main(void) {
-    UINT8 *base;
-    UINT32 timeThen, timeNow;
+    UINT8 *base,
+          *origBase,
+          *frntBase,
+          *bckBase;
+    UINT32 timeThen, 
+           timeNow,
+           bffrAddr;
     char input;
-    boolean quit,
-            pddlMved,
-            ballMved;
-    int oldPdleX, 
-        oldBallX,
-        oldBallY,
-        i;
+    boolean quit;
+    int i;
 
     /* Set game objects to their starting values*/
     initMod(&game);
 
-    /* Get screen address and font support*/
-    base = (UINT8*)Physbase();
+    /* save screen address and set front buffer */
+    origBase = (UINT8*)Physbase();
+    frntBase = origBase;
+    base = frntBase;
+
+    /* Align extra screen memory to 256 byte boundary */
+    bffrAddr = (UINT32)screenMem;
+    bffrAddr += SCRALGN - 1;
+    bffrAddr &= 0xFFFFFF00UL;
+    bckBase = (UINT8 *)bffrAddr;
+
     linea0();
 
     /* Draw first frame */
     render(&game, base);
     prev = game;
+
+    /* Draw starting frame into extra buffer */
+    render(&game, bckBase);
+    prevBck = game;
+
 
     quit = FALSE;
 
@@ -66,10 +87,6 @@ int main(void) {
         if (quit == FALSE && timeNow != timeThen) {
             timeThen = timeNow;
 
-            oldPdleX = game.paddle.x;
-            oldBallX = game.ball.x;
-            oldBallY = game.ball.y;
-
             if (game.state == GAME_PLAYING) {
                 pTick(&game);
                 bTick(&game);
@@ -89,16 +106,12 @@ int main(void) {
 
                 
                 outBnds(&game);
-                brkDest(&game);
+                brksDest(&game);
             }
 
-            /* Redraw if paddle or ball changed position */
-            pddlMved = (game.paddle.x != oldPdleX);
-            ballMved = (game.ball.x != oldBallX || game.ball.y != oldBallY);
-
-            if (pddlMved || ballMved) {
-                render(&game, base);
-            }
+            /* Update changed parts of screen */
+            rndUpdt(&game, &prev, base);
+            prev = game;
         }
     }
 

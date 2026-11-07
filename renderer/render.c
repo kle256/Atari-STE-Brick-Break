@@ -26,6 +26,10 @@ static const UINT8 ballBmp[BSIZE] = {
     0x3C
 };
 
+static int bOvrLapBrk(Ball *ball, Brick *brick);
+static void updtScor(Model *model, Model *prev, UINT8 *base);
+static void updtLfe(Model *model, Model *prev, UINT8 *base);
+
 
 /* Renders the entire game model to the screen. */
 void render(Model *model, UINT8 *base) {
@@ -35,6 +39,9 @@ void render(Model *model, UINT8 *base) {
 
     drawBase = (UINT32 *)base;
     clear_screen(drawBase);
+
+    /* Draw top edge below score and lives */
+    plot_horizontal_line(drawBase, 39, 0, 640);
 
     /* Render all active bricks*/
     for (i = 0; i < model->brkCnt; i++) {
@@ -114,4 +121,115 @@ void rendState(GameState state, UINT8 *base) {
         plot_string(base, MSGROW, MSGCOL, "GAME OVER");
     }
     
+}
+
+/* Update from using current and previous drawn models*/
+void rndUpdt(Model *model, Model *prev, UINT8 *base) {
+    UINT32 *drawBase;
+    Brick *brick;
+    int i;
+
+    drawBase = (UINT32 *)base;
+
+    /*Draw full frame on level update */
+    if (model->currLvl != prev->currLvl) {
+        render(model, base);
+
+        return;
+    }
+
+    /* Draw full frame when game state changes */
+    if (model->state != prev->state) {
+        render(model, base);
+        return;
+    }
+
+    clear_region(drawBase, prev->ball.y, prev->ball.x, prev->ball.height,
+                prev->ball.width);
+    clear_region(drawBase, prev->paddle.y, prev->paddle.x, prev->paddle.height,
+                prev->paddle.width);
+
+    /* Clear bricks destroyed from previous screen */
+    for (i =0; i < prev->brkCnt; i++) {
+        if (prev->bricks[i].active && !model->bricks[i].active) {
+            clear_region(drawBase, prev->bricks[i].y, prev->bricks[i].x,
+                        prev->bricks[i].height, prev->bricks[i].width);
+        }
+    }
+
+    /* Restore bricks touched by previous ball*/
+    for (i = 0; i < model->brkCnt; i++) {
+        brick = &model->bricks[i];
+
+        if (brick->active) {
+            if (bOvrLapBrk(&prev->ball, brick)) {
+                rendBrk(brick, base);
+            }
+        }
+    }
+    updtScor(model, prev, base);
+    updtLfe(model, prev, base);
+
+    /* Draw ball and paddle at current postions */
+    rendBall(&model->ball, base);
+    rendPad(&model->paddle, base);
+
+    
+}
+
+/* Checks whether ball and brick overlap */
+static int bOvrLapBrk(Ball *ball, Brick *brick) {
+    int ovrLapX, 
+        ovrLapY,
+        bRgt,
+        bBot,
+        brkRgt,
+        brkBot;
+
+        /* Calc ball right and bottom edges*/
+        bRgt = ball->x + ball->width;
+        bBot = ball->y + ball->height;
+
+        /* Calc brick right and bottom edges*/
+        brkRgt = brick->x + brick->width;
+        brkBot = brick->y + brick->height;
+
+        /* Check horizontal overlap*/
+        ovrLapX = ball->x < brkRgt;
+        ovrLapX = ovrLapX && bRgt > brick->x;
+
+        /* Check vertical overlap*/
+        ovrLapY = ball->y < brkBot;
+        ovrLapY = ovrLapY && bBot > brick->y;
+
+        /* Return true if both directions overlap*/
+        return ovrLapX && ovrLapY;
+
+
+
+}
+
+/* Updates score if value changed*/
+static void updtScor(Model *model, Model *prev, UINT8 *base) {
+    UINT32 *drawBase;
+    drawBase = (UINT32 *)base;
+
+    if (model->score.value != prev->score.value) {
+        clear_region(drawBase, prev->score.y, prev->score.x, prev->score.height,
+                    prev->score.width);
+        
+        rendScor(&model->score, base);
+    }
+}
+/* Updates life if value changed*/
+static void updtLfe(Model *model, Model *prev, UINT8 *base) {
+    UINT32 *drawBase;
+    drawBase = (UINT32 *)base;
+
+    if(model->lives.value != prev->lives.value) {
+        clear_region(drawBase, prev->lives.y, prev->lives.x, prev->lives.height,
+                    prev->lives.width);
+
+        rendLife(&model->lives, base);
+    }
 }
