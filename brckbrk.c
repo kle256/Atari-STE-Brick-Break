@@ -12,4 +12,37 @@ Purpose: Initializes game and handles main game loop
 #include "input.h"
 #include "clock.h"
 
-static Mode
+/* Stores current game state*/
+static Model game;
+
+int main(void) {
+    UINT8 *base;
+    char input;
+    boolean quit;
+
+    /* Set game objects to their starting values*/
+    initMod(&game);
+
+    /* Get screen address and font support*/
+    base = (UINT8*)Physbase();
+    linea0();
+
+    /* Draw first frame */
+    render(&game, base);
+
+    quit = FALSE;
+
+    while (quit == FALSE) {
+
+        /* Check for key input*/
+        if (hasInput()) {
+            input = getInput();
+
+            if (input == 'q' || input == 'Q') {
+                quit = TRUE;
+            } 
+        }
+    }
+
+    return 0;
+}
